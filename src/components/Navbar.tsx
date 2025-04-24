@@ -1,13 +1,14 @@
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, AlertTriangle, Bell, Moon, Sun } from "lucide-react";
+import { Menu, X, AlertTriangle, Bell, Moon, Sun, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NotificationPopup from "./NotificationPopup";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +28,7 @@ const Navbar = () => {
   }, [isDark]);
 
   const toggleTheme = () => setIsDark(!isDark);
+  const toggleNotifications = () => setShowNotifications(!showNotifications);
 
   return (
     <header
@@ -87,18 +89,22 @@ const Navbar = () => {
               variant="ghost" 
               size="icon" 
               className="rounded-full relative"
+              onClick={toggleNotifications}
             >
               <Bell className="h-[1.2rem] w-[1.2rem]" />
               <span className="absolute top-0 right-0 h-2 w-2 bg-jawara-red rounded-full" />
               <span className="sr-only">Notifications</span>
             </Button>
             
-            <Button 
-              className="hidden md:flex"
-              variant="default"
-            >
-              Sign In
-            </Button>
+            <Link to="/login" className="hidden md:flex items-center space-x-2">
+              <Button
+                className="hidden md:flex"
+                variant="default"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </Button>
+            </Link>
             
             <button
               className="md:hidden"
@@ -183,6 +189,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      {showNotifications && <NotificationPopup onClose={toggleNotifications} />}
     </header>
   );
 };
