@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from "react";
-import { AlertTriangle, FileWarning, AlertCircle, Waves, CloudLightning, Loader, ArrowRight, Users, Package, HandHelping } from "lucide-react";
+import { AlertTriangle, FileWarning, AlertCircle, Waves, CloudLightning, Loader, ArrowRight, Users, Package, HandHelping, Heart, Shield, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -256,7 +255,7 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+               
         {/* Features Section */}
         <section className="py-16 md:py-24 bg-slate-50 dark:bg-jawara-dark/30">
           <div className="container mx-auto px-4 md:px-6">
