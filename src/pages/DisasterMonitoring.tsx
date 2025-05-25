@@ -33,6 +33,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
+import "@/styles/animations.css";
 
 // Fix for default marker icons in Leaflet
 const iconRetinaUrl =
@@ -72,7 +73,7 @@ const disasterData = [
   {
     id: 1,
     type: "Banjir",
-    location: "Area Pesisir Semarang",
+    location: "Kecamatan Semarang Utara",
     status: "Berlangsung",
     severity: "Tinggi",
     affected: 1250,
@@ -87,7 +88,7 @@ const disasterData = [
   {
     id: 2,
     type: "Longsor",
-    location: "Pegunungan Temanggung",
+    location: "Kecamatan Temanggung",
     status: "Pemantauan",
     severity: "Sedang",
     affected: 342,
@@ -102,7 +103,7 @@ const disasterData = [
   {
     id: 3,
     type: "Aktivitas Gunung Berapi",
-    location: "Gunung Merapi",
+    location: "Kecamatan Cangkringan",
     status: "Peringatan",
     severity: "Tinggi",
     affected: 520,
@@ -117,7 +118,7 @@ const disasterData = [
   {
     id: 4,
     type: "Banjir",
-    location: "Kota Pekalongan",
+    location: "Kecamatan Pekalongan Utara",
     status: "Berlangsung",
     severity: "Sedang",
     affected: 800,
@@ -131,7 +132,7 @@ const disasterData = [
   {
     id: 5,
     type: "Gempa Bumi",
-    location: "Wonosobo",
+    location: "Kecamatan Wonosobo",
     status: "Peringatan",
     severity: "Tinggi",
     affected: 1200,
@@ -145,7 +146,7 @@ const disasterData = [
   {
     id: 6,
     type: "Banjir",
-    location: "Kota Tegal",
+    location: "Kecamatan Tegal Barat",
     status: "Pemantauan",
     severity: "Rendah",
     affected: 300,
@@ -159,7 +160,7 @@ const disasterData = [
   {
     id: 7,
     type: "Longsor",
-    location: "Purworejo",
+    location: "Kecamatan Purworejo",
     status: "Peringatan",
     severity: "Tinggi",
     affected: 600,
@@ -173,7 +174,7 @@ const disasterData = [
   {
     id: 8,
     type: "Banjir",
-    location: "Kendal",
+    location: "Kecamatan Kendal",
     status: "Pemantauan",
     severity: "Rendah",
     affected: 250,
@@ -187,7 +188,7 @@ const disasterData = [
   {
     id: 9,
     type: "Longsor",
-    location: "Magelang",
+    location: "Kecamatan Magelang Utara",
     status: "Pemantauan",
     severity: "Sedang",
     affected: 400,
@@ -201,7 +202,7 @@ const disasterData = [
   {
     id: 10,
     type: "Banjir",
-    location: "Salatiga",
+    location: "Kecamatan Salatiga",
     status: "Pemantauan",
     severity: "Rendah",
     affected: 200,
@@ -219,25 +220,37 @@ const statsData = [
     label: "Bencana Aktif",
     value: 3,
     icon: AlertTriangle,
-    color: "text-jawara-red",
+    color: "text-red-500",
+    bgColor:
+      "from-red-500/10 via-red-400/5 to-red-300/10 dark:from-red-500/20 dark:via-red-400/10 dark:to-red-300/20",
+    iconBg: "bg-red-500/20",
   },
   {
     label: "Korban Terdampak",
     value: 2112,
     icon: Users,
-    color: "text-jawara-blue",
+    color: "text-blue-500",
+    bgColor:
+      "from-blue-500/10 via-blue-400/5 to-blue-300/10 dark:from-blue-500/20 dark:via-blue-400/10 dark:to-blue-300/20",
+    iconBg: "bg-blue-500/20",
   },
   {
     label: "Area Berisiko Tinggi",
     value: 5,
     icon: MapPin,
     color: "text-amber-500",
+    bgColor:
+      "from-amber-500/10 via-amber-400/5 to-amber-300/10 dark:from-amber-500/20 dark:via-amber-400/10 dark:to-amber-300/20",
+    iconBg: "bg-amber-500/20",
   },
   {
     label: "Tim Tanggap",
     value: 12,
     icon: HandHelping,
     color: "text-green-500",
+    bgColor:
+      "from-green-500/10 via-green-400/5 to-green-300/10 dark:from-green-500/20 dark:via-green-400/10 dark:to-green-300/20",
+    iconBg: "bg-green-500/20",
   },
 ];
 
@@ -253,46 +266,49 @@ const DisasterMonitoring = () => {
         {/* Hero Section */}
         <section className="pt-20 pb-16 md:pt-28 md:pb-20 hero-gradient overflow-hidden relative">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="md:w-1/2 z-10 animate-fade-in">
-                <Badge className="mb-4 bg-jawara-blue/10 text-jawara-blue border-none hover:bg-jawara-blue/20">
-                  Pemantauan Real-time
-                </Badge>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance mb-4">
-                  Dashboard <span className="text-jawara-blue">Pemantauan</span>{" "}
-                  Bencana
-                </h1>
-                <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl mb-8 max-w-xl">
-                  Pantau bencana aktif, area terdampak, dan upaya penanganan
-                  secara real-time.
-                </p>
-              </div>
+            <div className="max-w-3xl mx-auto text-center z-10 animate-fade-in">
+              <Badge className="mb-6 text-base px-4 py-1.5 bg-jawara-blue/10 text-jawara-blue border-none">
+                Pemantauan Real-time
+              </Badge>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance mb-6 leading-tight">
+                Dashboard <span className="text-jawara-blue">Pemantauan</span>{" "}
+                Bencana
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 mb-10 max-w-xl mx-auto leading-relaxed">
+                Pantau bencana aktif, area terdampak, dan upaya penanganan
+                secara real-time.
+              </p>
             </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent"></div>
         </section>
 
         {/* Stats Section */}
-        <section className="py-12 md:py-20">
+        <section className="py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
               {statsData.map((stat, index) => (
-                <Card
+                <div
                   key={index}
-                  className="victim-card border-none shadow-md overflow-hidden"
+                  className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${stat.bgColor}`}
                 >
-                  <CardContent className="p-6">
+                  <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-900/10"></div>
+                  <div className="relative p-8">
                     <div className="flex flex-col items-center text-center">
-                      <stat.icon className={`w-10 h-10 mb-4 ${stat.color}`} />
-                      <h3 className="text-3xl font-bold mb-1">
+                      <div
+                        className={`w-16 h-16 rounded-2xl ${stat.iconBg} flex items-center justify-center mb-5`}
+                      >
+                        <stat.icon className={`w-8 h-8 ${stat.color}`} />
+                      </div>
+                      <h3 className="text-4xl font-bold mb-2 text-slate-900 dark:text-slate-100">
                         {stat.value.toLocaleString()}
                       </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <p className="text-base text-slate-600 dark:text-slate-300">
                         {stat.label}
                       </p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -386,14 +402,6 @@ const DisasterMonitoring = () => {
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   <span>Filter</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Ekspor</span>
                 </Button>
               </div>
             </div>

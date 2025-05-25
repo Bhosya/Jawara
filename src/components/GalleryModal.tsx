@@ -36,14 +36,6 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
             <DialogTitle className="text-2xl font-bold">
               Galeri Dokumentasi
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="rounded-full"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 

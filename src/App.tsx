@@ -8,9 +8,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DisasterMonitoring from "./pages/DisasterMonitoring";
 import DisasterDetails from "./pages/DisasterDetails";
-import VictimTracking from "./pages/VictimTracking";
-import AidMonitoring from "./pages/AidMonitoring";
-import Volunteer from "./pages/Volunteer";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -45,9 +42,6 @@ const App = () => {
               path="/disaster-monitoring/:id"
               element={<DisasterDetails />}
             />
-            <Route path="/victim-tracking" element={<VictimTracking />} />
-            <Route path="/aid-monitoring" element={<AidMonitoring />} />
-            <Route path="/volunteer" element={<Volunteer />} />
             <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

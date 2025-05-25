@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import {
@@ -19,11 +19,15 @@ import {
   Heart,
   Shield,
   AlertOctagon,
+  UserCircle,
+  Package2,
+  Users2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import L from "leaflet";
@@ -70,7 +74,6 @@ const disasterData = {
   },
   contactInfo: {
     emergency: "112",
-    commandCenter: "024-1234567",
     email: "emergency@semarang.go.id",
   },
   updates: [
@@ -92,6 +95,7 @@ const disasterData = {
 const DisasterDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -153,11 +157,6 @@ const DisasterDetails = () => {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Phone className="w-4 h-4 text-slate-500" />
-                        <span>{disasterData.contactInfo.commandCenter}</span>
-                        <Badge className="ml-auto">Pusat Komando</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
                         <Mail className="w-4 h-4 text-slate-500" />
                         <span>{disasterData.contactInfo.email}</span>
                       </div>
@@ -207,146 +206,735 @@ const DisasterDetails = () => {
           </div>
         </section>
 
-        {/* Resources Section */}
-        <section className="py-12 md:py-20 bg-slate-50 dark:bg-jawara-dark/30">
+        {/* Tabs Section */}
+        <section className="py-12 md:py-20">
           <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8">
-              Status Sumber Daya
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Object.entries(disasterData.resources).map(
-                ([resource, data]) => (
-                  <Card key={resource} className="border-none shadow-md">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold mb-4 capitalize">
-                        {resource === "food"
-                          ? "Makanan"
-                          : resource === "water"
-                          ? "Air"
-                          : resource === "medicine"
-                          ? "Obat-obatan"
-                          : resource === "blankets"
-                          ? "Selimut"
-                          : resource}
-                      </h3>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Terdapat</span>
-                          <span>{data.received.toLocaleString()}</span>
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-4 mb-8">
+                <TabsTrigger
+                  value="overview"
+                  className="flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="victims"
+                  className="flex items-center gap-2"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  Korban
+                </TabsTrigger>
+                <TabsTrigger value="aid" className="flex items-center gap-2">
+                  <Package2 className="w-4 h-4" />
+                  Bantuan
+                </TabsTrigger>
+                <TabsTrigger
+                  value="volunteers"
+                  className="flex items-center gap-2"
+                >
+                  <Users2 className="w-4 h-4" />
+                  Relawan
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview">
+                {/* Resources Section */}
+                <div className="mb-12">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-8 flex items-center gap-3">
+                    <Package className="w-8 h-8 text-blue-500" />
+                    Status Sumber Daya
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-orange-50 dark:bg-orange-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-orange-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-400">
+                              Makanan
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-orange-600 dark:text-orange-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-orange-700 dark:text-orange-400">
+                                1,500 paket
+                              </span>
+                            </div>
+                            <Progress
+                              value={75}
+                              className="h-2 bg-orange-100 dark:bg-orange-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-orange-600 dark:text-orange-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-orange-700 dark:text-orange-400">
+                                2,000 paket
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <Progress
-                          value={(data.received / data.needed) * 100}
-                          className="h-2"
-                        />
-                        <div className="flex justify-between text-sm text-slate-500">
-                          <span>Dibutuhkan</span>
-                          <span>{data.needed.toLocaleString()}</span>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-blue-50 dark:bg-blue-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-blue-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
+                              Obat-obatan
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-blue-600 dark:text-blue-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-blue-700 dark:text-blue-400">
+                                300 paket
+                              </span>
+                            </div>
+                            <Progress
+                              value={60}
+                              className="h-2 bg-blue-100 dark:bg-blue-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-blue-600 dark:text-blue-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-blue-700 dark:text-blue-400">
+                                500 paket
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-purple-50 dark:bg-purple-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-purple-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-400">
+                              Pakaian
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-purple-600 dark:text-purple-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-purple-700 dark:text-purple-400">
+                                800 paket
+                              </span>
+                            </div>
+                            <Progress
+                              value={80}
+                              className="h-2 bg-purple-100 dark:bg-purple-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-purple-600 dark:text-purple-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-purple-700 dark:text-purple-400">
+                                1,000 paket
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-cyan-50 dark:bg-cyan-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-cyan-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-cyan-700 dark:text-cyan-400">
+                              Air Bersih
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-cyan-600 dark:text-cyan-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-cyan-700 dark:text-cyan-400">
+                                2,500 galon
+                              </span>
+                            </div>
+                            <Progress
+                              value={83}
+                              className="h-2 bg-cyan-100 dark:bg-cyan-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-cyan-600 dark:text-cyan-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-cyan-700 dark:text-cyan-400">
+                                3,000 galon
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Evacuation Centers */}
+                <div className="mb-12">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-8 flex items-center gap-3">
+                    <Building2 className="w-8 h-8 text-green-500" />
+                    Pusat Evakuasi
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {disasterData.evacuationCenters.map((center) => (
+                      <Card
+                        key={center.name}
+                        className="border-none shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                      >
+                        <CardContent className="p-0">
+                          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                                <Building2 className="w-6 h-6 text-green-500" />
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+                                  {center.name}
+                                </h3>
+                                <p className="text-sm text-green-600 dark:text-green-300">
+                                  Pusat Evakuasi
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-green-600 dark:text-green-300">
+                                  Kapasitas
+                                </span>
+                                <span className="font-medium text-green-700 dark:text-green-400">
+                                  {center.capacity.toLocaleString()}
+                                </span>
+                              </div>
+                              <Progress
+                                value={
+                                  (center.currentOccupants / center.capacity) *
+                                  100
+                                }
+                                className="h-2 bg-green-100 dark:bg-green-900/30"
+                              />
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-green-600 dark:text-green-300">
+                                  Pengungsi
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-green-700 dark:text-green-400">
+                                    {center.currentOccupants.toLocaleString()}
+                                  </span>
+                                  <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-none">
+                                    {Math.round(
+                                      (center.currentOccupants /
+                                        center.capacity) *
+                                        100
+                                    )}
+                                    %
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Response Teams */}
+                <div className="mb-12">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-8 flex items-center gap-3">
+                    <Users className="w-8 h-8 text-amber-500" />
+                    Tim Tanggap Darurat
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {disasterData.responseTeams.map((team) => (
+                      <Card
+                        key={team.name}
+                        className="border-none shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                      >
+                        <CardContent className="p-0">
+                          <div className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                <Users className="w-6 h-6 text-amber-500" />
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-400">
+                                  {team.name}
+                                </h3>
+                                <p className="text-sm text-amber-600 dark:text-amber-300">
+                                  Tim Tanggap Darurat
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-amber-600 dark:text-amber-300">
+                                  Anggota
+                                </span>
+                                <span className="font-medium text-amber-700 dark:text-amber-400">
+                                  {team.members.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="victims">
+                <div className="space-y-8">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl md:text-3xl font-bold">
+                      Data Korban
+                    </h2>
+                  </div>
+
+                  <Card>
+                    <CardContent className="p-8">
+                      <div className="space-y-8">
+                        <div className="flex flex-col items-center text-center">
+                          <h3 className="text-2xl font-semibold mb-3">
+                            Total Korban
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-jawara-blue/10 flex items-center justify-center">
+                              <Users className="w-6 h-6 text-jawara-blue" />
+                            </div>
+                            <p className="text-5xl font-bold text-jawara-blue">
+                              {disasterData.affected.toLocaleString()}
+                            </p>
+                          </div>
+                          <p className="text-sm text-slate-500 mt-2">
+                            Total korban terdampak
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-6 pt-6 border-t">
+                          <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                                <Users className="w-5 h-5 text-green-500" />
+                              </div>
+                              <p className="text-2xl font-bold text-green-500">
+                                1,100
+                              </p>
+                            </div>
+                            <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                              Selamat
+                            </p>
+                          </div>
+
+                          <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <AlertCircle className="w-5 h-5 text-red-500" />
+                              </div>
+                              <p className="text-2xl font-bold text-red-500">
+                                150
+                              </p>
+                            </div>
+                            <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                              Meninggal
+                            </p>
+                          </div>
+
+                          <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                              </div>
+                              <p className="text-2xl font-bold text-amber-500">
+                                0
+                              </p>
+                            </div>
+                            <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                              Hilang
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                )
-              )}
-            </div>
-          </div>
-        </section>
+                </div>
+              </TabsContent>
 
-        {/* Evacuation Centers Section */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8">
-              Pusat Evakuasi
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {disasterData.evacuationCenters.map((center, index) => (
-                <Card key={index} className="border-none shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Building2 className="w-5 h-5 text-jawara-blue" />
-                      <h3 className="font-semibold">{center.name}</h3>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Penghuni Saat Ini</span>
-                        <span>{center.currentOccupants.toLocaleString()}</span>
-                      </div>
-                      <Progress
-                        value={
-                          (center.currentOccupants / center.capacity) * 100
-                        }
-                        className="h-2"
-                      />
-                      <div className="flex justify-between text-sm text-slate-500">
-                        <span>Kapasitas</span>
-                        <span>{center.capacity.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
+              <TabsContent value="aid">
+                <div className="space-y-8">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl md:text-3xl font-bold">
+                      Manajemen Bantuan
+                    </h2>
+                    <Button>+ Tambah Bantuan</Button>
+                  </div>
 
-        {/* Response Teams Section */}
-        <section className="py-12 md:py-20 bg-slate-50 dark:bg-jawara-dark/30">
-          <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8">Tim Tanggap</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {disasterData.responseTeams.map((team, index) => (
-                <Card key={index} className="border-none shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Shield className="w-5 h-5 text-jawara-blue" />
-                      <h3 className="font-semibold">{team.name}</h3>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Anggota</span>
-                        <span>{team.members}</span>
-                      </div>
-                      <Badge
-                        className={`${
-                          team.status === "Aktif"
-                            ? "bg-green-500"
-                            : "bg-amber-500"
-                        } text-white`}
-                      >
-                        {team.status}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-orange-50 dark:bg-orange-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-orange-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-400">
+                              Makanan
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-orange-600 dark:text-orange-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-orange-700 dark:text-orange-400">
+                                1,500 paket
+                              </span>
+                            </div>
+                            <Progress
+                              value={75}
+                              className="h-2 bg-orange-100 dark:bg-orange-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-orange-600 dark:text-orange-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-orange-700 dark:text-orange-400">
+                                2,000 paket
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-        {/* Updates Section */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8">
-              Pembaruan Terbaru
-            </h2>
-            <div className="space-y-4">
-              {disasterData.updates.map((update, index) => (
-                <Card key={index} className="border-none shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Clock className="w-5 h-5 text-slate-500 mt-1" />
-                      <div>
-                        <p className="text-slate-600 dark:text-slate-300">
-                          {update.message}
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-blue-50 dark:bg-blue-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-blue-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
+                              Obat-obatan
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-blue-600 dark:text-blue-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-blue-700 dark:text-blue-400">
+                                300 paket
+                              </span>
+                            </div>
+                            <Progress
+                              value={60}
+                              className="h-2 bg-blue-100 dark:bg-blue-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-blue-600 dark:text-blue-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-blue-700 dark:text-blue-400">
+                                500 paket
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-purple-50 dark:bg-purple-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-purple-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-400">
+                              Pakaian
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-purple-600 dark:text-purple-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-purple-700 dark:text-purple-400">
+                                800 paket
+                              </span>
+                            </div>
+                            <Progress
+                              value={80}
+                              className="h-2 bg-purple-100 dark:bg-purple-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-purple-600 dark:text-purple-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-purple-700 dark:text-purple-400">
+                                1,000 paket
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-md overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="p-6 bg-cyan-50 dark:bg-cyan-950/20">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                              <Package className="w-6 h-6 text-cyan-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-cyan-700 dark:text-cyan-400">
+                              Air Bersih
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-cyan-600 dark:text-cyan-300">
+                                Terdapat
+                              </span>
+                              <span className="font-medium text-cyan-700 dark:text-cyan-400">
+                                2,500 galon
+                              </span>
+                            </div>
+                            <Progress
+                              value={83}
+                              className="h-2 bg-cyan-100 dark:bg-cyan-900/30"
+                            />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-cyan-600 dark:text-cyan-300">
+                                Dibutuhkan
+                              </span>
+                              <span className="font-medium text-cyan-700 dark:text-cyan-400">
+                                3,000 galon
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Add aid distribution table here */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold mb-4">
+                        Distribusi Bantuan
+                      </h3>
+                      <div className="border rounded-lg">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b bg-slate-50 dark:bg-slate-800">
+                              <th className="p-4 text-left font-medium text-slate-600 dark:text-slate-300">
+                                Nama Donatur
+                              </th>
+                              <th className="p-4 text-left font-medium text-slate-600 dark:text-slate-300">
+                                Nominal
+                              </th>
+                              <th className="p-4 text-left font-medium text-slate-600 dark:text-slate-300">
+                                Tanggal Donasi
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <td className="p-4">PT Maju Bersama</td>
+                              <td className="p-4">Rp 50.000.000</td>
+                              <td className="p-4">15 Mar 2024</td>
+                            </tr>
+                            <tr className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <td className="p-4">Yayasan Peduli Indonesia</td>
+                              <td className="p-4">Rp 25.000.000</td>
+                              <td className="p-4">14 Mar 2024</td>
+                            </tr>
+                            <tr className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <td className="p-4">CV Sejahtera Abadi</td>
+                              <td className="p-4">Rp 15.000.000</td>
+                              <td className="p-4">13 Mar 2024</td>
+                            </tr>
+                            <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <td className="p-4">Budi Santoso</td>
+                              <td className="p-4">Rp 5.000.000</td>
+                              <td className="p-4">12 Mar 2024</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="volunteers">
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold">
+                      Manajemen Relawan
+                    </h2>
+                  </div>
+
+                  <Card className="border-none shadow-md">
+                    <CardContent className="p-8">
+                      <div className="flex flex-col items-center text-center mb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-12 h-12 rounded-full bg-jawara-blue/10 flex items-center justify-center">
+                            <Users2 className="w-6 h-6 text-jawara-blue" />
+                          </div>
+                          <p className="text-4xl font-bold text-jawara-blue">
+                            150
+                          </p>
+                        </div>
+                        <p className="text-lg font-medium text-slate-600 dark:text-slate-300">
+                          Total Relawan Aktif
                         </p>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {update.time}
-                        </p>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <Card className="border-none shadow-sm bg-emerald-50 dark:bg-emerald-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                <Heart className="w-5 h-5 text-emerald-500" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-emerald-700 dark:text-emerald-400">
+                                  Medical Assistance
+                                </h3>
+                                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+                                  45
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                              Tim medis dan paramedis
+                            </p>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border-none shadow-sm bg-blue-50 dark:bg-blue-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                <Shield className="w-5 h-5 text-blue-500" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-blue-700 dark:text-blue-400">
+                                  Search and Rescue
+                                </h3>
+                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">
+                                  35
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-blue-600 dark:text-blue-400">
+                              Tim pencarian dan penyelamatan
+                            </p>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border-none shadow-sm bg-purple-50 dark:bg-purple-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                                <Building2 className="w-5 h-5 text-purple-500" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-purple-700 dark:text-purple-400">
+                                  Shelter Management
+                                </h3>
+                                <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">
+                                  25
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-purple-600 dark:text-purple-400">
+                              Pengelola tempat pengungsian
+                            </p>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border-none shadow-sm bg-amber-50 dark:bg-amber-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                <Heart className="w-5 h-5 text-amber-500" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-amber-700 dark:text-amber-400">
+                                  Healthcare Support
+                                </h3>
+                                <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">
+                                  30
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-amber-600 dark:text-amber-400">
+                              Dukungan kesehatan
+                            </p>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border-none shadow-sm bg-rose-50 dark:bg-rose-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center">
+                                <Heart className="w-5 h-5 text-rose-500" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-rose-700 dark:text-rose-400">
+                                  Emotional Support
+                                </h3>
+                                <p className="text-2xl font-bold text-rose-600 dark:text-rose-300">
+                                  15
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-rose-600 dark:text-rose-400">
+                              Dukungan psikologis
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </section>
       </main>
