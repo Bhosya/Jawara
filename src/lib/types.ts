@@ -1,102 +1,110 @@
 export interface Bencana {
   id: string;
-  nama: string;
-  tanggal: Date;
+  jenis_bencana: string;
+  tanggal_bencana: Date;
   deskripsi: string;
+  id_lokasi: string;
   status: string;
-  created_at: Date;
-  updated_at: Date;
+  tingkat_peringatan: string;
+  id_kontak_darurat: string;
+  id_pusat_evakuasi: string;
+  lokasi?: Lokasi;
+  kontak_darurat?: KontakDarurat;
+  pusat_evakuasi?: PusatEvakuasi;
+  jumlah_korban?: JumlahKorban[];
+  korban_hilang?: KorbanHilang[];
+  relawan?: Relawan[];
+  kebutuhan?: Kebutuhan[];
+  donasi?: Donasi[];
 }
 
 export interface Lokasi {
   id: string;
-  bencana_id: string;
+  nama_kecamatan: string;
+  id_kabupaten: string;
   latitude: number;
   longitude: number;
-  alamat: string;
-  created_at: Date;
-  updated_at: Date;
+  kabupaten?: Kabupaten;
+  bencana?: Bencana[];
 }
 
 export interface Kabupaten {
   id: string;
-  nama: string;
-  provinsi: string;
-  created_at: Date;
-  updated_at: Date;
+  nama_kabupaten: string;
+  latitude: number;
+  longitude: number;
+  lokasi?: Lokasi[];
 }
 
 export interface JumlahKorban {
   id: string;
-  bencana_id: string;
-  meninggal: number;
-  luka_luka: number;
-  hilang: number;
-  created_at: Date;
-  updated_at: Date;
+  id_bencana: string;
+  jumlah_selamat: number;
+  jumlah_meninggal: number;
+  jumlah_hilang: number;
+  bencana?: Bencana;
 }
 
 export interface KontakDarurat {
   id: string;
-  bencana_id: string;
-  nama: string;
-  nomor_telepon: string;
+  nama_instansi: string;
+  no_telp: string;
+  email: string;
   alamat: string;
-  created_at: Date;
-  updated_at: Date;
+  bencana?: Bencana[];
 }
 
 export interface PusatEvakuasi {
   id: string;
-  bencana_id: string;
-  nama: string;
+  nama_lokasi: string;
   alamat: string;
+  longitude: number;
+  latitude: number;
   kapasitas: number;
-  created_at: Date;
-  updated_at: Date;
+  pengungsi: number;
+  bencana?: Bencana[];
 }
 
 export interface KorbanHilang {
   id: string;
-  bencana_id: string;
+  id_bencana: string;
   nama: string;
-  umur: number;
-  jenis_kelamin: string;
   deskripsi: string;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
+  Foto: string;
+  kontak_keluarga: string;
+  bencana?: Bencana;
 }
 
 export interface Relawan {
   id: string;
-  bencana_id: string;
+  id_bencana: string;
   nama: string;
-  nomor_telepon: string;
-  keahlian: string;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
+  jenis_relawan: string;
+  nomor_hp: string;
+  email: string;
+  bencana?: Bencana;
 }
 
 export interface Kebutuhan {
   id: string;
-  bencana_id: string;
-  nama: string;
-  jumlah: number;
-  satuan: string;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
+  id_bencana: string;
+  jumlah_makanan: number;
+  jumlah_max_makanan: number;
+  jumlah_obat: number;
+  jumlah_max_obat: number;
+  jumlah_pakaian: number;
+  jumlah_max_pakaian: number;
+  jumlah_airbersih: number;
+  jumlah_max_airbersih: number;
+  bencana?: Bencana;
 }
 
 export interface Donasi {
   id: string;
-  bencana_id: string;
+  id_bencana: string;
   nama_donatur: string;
-  jumlah: number;
-  jenis: string;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
+  nominal: number;
+  metode_pembayaran: string;
+  tanggal_donasi: Date;
+  bencana?: Bencana;
 }

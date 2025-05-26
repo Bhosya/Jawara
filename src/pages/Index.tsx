@@ -28,6 +28,9 @@ import {
   Zap,
   TreePine,
   Activity,
+  Eye,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -45,14 +48,10 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import GalleryModal from "@/components/GalleryModal";
 import "@/styles/animations.css";
+import { getAllBencana } from "@/lib/api";
+import type { Bencana } from "@/lib/types";
 
 // Custom styles for the map tooltip
 const customTooltipStyle = `
@@ -100,43 +99,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
-
-// Mock data for early warnings
-const alertData = [
-  {
-    id: 1,
-    type: "Banjir",
-    location: "Semarang",
-    level: "Tinggi",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-    description:
-      "Curah hujan tinggi menyebabkan potensi banjir di daerah dataran rendah Semarang.",
-    icon: Waves,
-    color: "bg-blue-500",
-  },
-  {
-    id: 2,
-    type: "Longsor",
-    location: "Magelang",
-    level: "Sedang",
-    timestamp: new Date(Date.now() - 1000 * 60 * 45),
-    description:
-      "Ketidakstabilan tanah terbaru di lereng bukit dekat Magelang. Warga diharapkan waspada.",
-    icon: FileWarning,
-    color: "bg-amber-500",
-  },
-  {
-    id: 3,
-    type: "Badai Petir",
-    location: "Surakarta",
-    level: "Sedang",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    description:
-      "Badai petir parah diperkirakan terjadi di wilayah Surakarta dalam 6 jam ke depan.",
-    icon: CloudLightning,
-    color: "bg-purple-500",
-  },
-];
 
 // Mock data for current disasters with detailed impact data
 const disasterData = [
@@ -562,121 +524,6 @@ const disasterData = [
   },
 ];
 
-// Updated operational needs data with progress
-const operationalNeeds = [
-  {
-    id: 1,
-    disaster: "Banjir",
-    location: "Kecamatan Semarang Utara",
-    needs: [
-      {
-        item: "Selimut",
-        quantity: 200,
-        current: 120,
-        priority: "Urgent",
-        color: "bg-red-500",
-      },
-      {
-        item: "Air Bersih",
-        quantity: 500,
-        current: 300,
-        priority: "High",
-        color: "bg-orange-500",
-      },
-      {
-        item: "Obat-obatan",
-        quantity: 100,
-        current: 80,
-        priority: "High",
-        color: "bg-orange-500",
-      },
-    ],
-  },
-  {
-    id: 2,
-    disaster: "Longsor",
-    location: "Kecamatan Temanggung",
-    needs: [
-      {
-        item: "Tenda",
-        quantity: 30,
-        current: 15,
-        priority: "Urgent",
-        color: "bg-red-500",
-      },
-      {
-        item: "Makanan Instan",
-        quantity: 200,
-        current: 100,
-        priority: "High",
-        color: "bg-orange-500",
-      },
-      {
-        item: "Peralatan Evakuasi",
-        quantity: 50,
-        current: 20,
-        priority: "Medium",
-        color: "bg-amber-500",
-      },
-    ],
-  },
-  {
-    id: 3,
-    disaster: "Aktivitas Gunung Berapi",
-    location: "Kecamatan Cangkringan",
-    needs: [
-      {
-        item: "Masker",
-        quantity: 1000,
-        current: 600,
-        priority: "Urgent",
-        color: "bg-red-500",
-      },
-      {
-        item: "Tenda",
-        quantity: 50,
-        current: 30,
-        priority: "High",
-        color: "bg-orange-500",
-      },
-      {
-        item: "Air Bersih",
-        quantity: 300,
-        current: 150,
-        priority: "High",
-        color: "bg-orange-500",
-      },
-    ],
-  },
-];
-
-const statsData = [
-  {
-    label: "Bencana Aktif",
-    value: 3,
-    icon: AlertTriangle,
-    color: "text-jawara-red",
-  },
-  {
-    label: "Korban Terdampak",
-    value: 2112,
-    icon: Users,
-    color: "text-jawara-blue",
-  },
-  {
-    label: "Paket Bantuan",
-    value: 1450,
-    icon: Package,
-    color: "text-green-500",
-  },
-  {
-    label: "Relawan Aktif",
-    value: 325,
-    icon: HandHelping,
-    color: "text-amber-500",
-  },
-];
-
 // Add gallery images data
 const galleryImages = [
   {
@@ -735,6 +582,56 @@ const galleryImages = [
   },
 ];
 
+const getKebutuhanLabels = (kebutuhan: any) => {
+  const getLevelAndColor = (value: number, max: number) => {
+    const percentage = (value / max) * 100;
+    if (percentage <= 50) return { level: "Urgent", color: "bg-red-500" };
+    if (percentage <= 60) return { level: "High", color: "bg-orange-500" };
+    if (percentage <= 70) return { level: "Medium", color: "bg-blue-500" };
+    return { level: "Normal", color: "bg-green-500" };
+  };
+
+  return [
+    {
+      key: "makanan",
+      label: "Makanan",
+      value: kebutuhan.jumlah_makanan,
+      max: kebutuhan.jumlah_max_makanan,
+      ...getLevelAndColor(
+        kebutuhan.jumlah_makanan,
+        kebutuhan.jumlah_max_makanan
+      ),
+    },
+    {
+      key: "obat",
+      label: "Obat-obatan",
+      value: kebutuhan.jumlah_obat,
+      max: kebutuhan.jumlah_max_obat,
+      ...getLevelAndColor(kebutuhan.jumlah_obat, kebutuhan.jumlah_max_obat),
+    },
+    {
+      key: "pakaian",
+      label: "Pakaian",
+      value: kebutuhan.jumlah_pakaian,
+      max: kebutuhan.jumlah_max_pakaian,
+      ...getLevelAndColor(
+        kebutuhan.jumlah_pakaian,
+        kebutuhan.jumlah_max_pakaian
+      ),
+    },
+    {
+      key: "airbersih",
+      label: "Air Bersih",
+      value: kebutuhan.jumlah_airbersih,
+      max: kebutuhan.jumlah_max_airbersih,
+      ...getLevelAndColor(
+        kebutuhan.jumlah_airbersih,
+        kebutuhan.jumlah_max_airbersih
+      ),
+    },
+  ];
+};
+
 // Add this function before the Index component
 const getIconPath = (icon: any) => {
   switch (icon) {
@@ -757,138 +654,152 @@ const getIconPath = (icon: any) => {
   }
 };
 
+const getIconByJenisBencana = (jenis_bencana: string) => {
+  switch (jenis_bencana?.toLowerCase()) {
+    case "banjir":
+      return Waves;
+    case "longsor":
+    case "tanah longsor":
+      return Mountain;
+    case "gunung berapi":
+    case "erupsi":
+      return Triangle;
+    case "gempa bumi":
+      return Activity;
+    case "kebakaran hutan":
+      return TreePine;
+    case "angin kencang":
+    case "angin puting beliung":
+      return Wind;
+    case "kebakaran":
+      return Flame;
+    default:
+      return AlertTriangle;
+  }
+};
+
 const Index = () => {
-  const [loading, setLoading] = useState(true);
+  const [bencanaData, setBencanaData] = useState<Bencana[]>([]);
   const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
-  const [currentVictimIndex, setCurrentVictimIndex] = useState(0);
-  const [currentNeedIndex, setCurrentNeedIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [victimProgress, setVictimProgress] = useState(0);
-  const [needProgress, setNeedProgress] = useState(0);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedDisasterType, setSelectedDisasterType] = useState<
     string | null
   >(null);
   const [hoveredDisaster, setHoveredDisaster] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 3;
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+    const fetchBencana = async () => {
+      try {
+        const data = await getAllBencana();
+        // Filter data dengan status AKTIF dan urutkan berdasarkan tanggal terbaru
+        const filteredData = data
+          .filter((bencana) => bencana.status.toUpperCase() === "AKTIF")
+          .sort(
+            (a, b) =>
+              new Date(b.tanggal_bencana).getTime() -
+              new Date(a.tanggal_bencana).getTime()
+          )
+          .slice(0, 10); // Ambil 10 data teratas
+        setBencanaData(filteredData);
+      } catch (error) {
+        console.error("Error fetching bencana data:", error);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    fetchBencana();
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentAlertIndex((prev) => (prev + 1) % alertData.length);
-      setProgress(0);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const progressInterval = setInterval(() => {
+    const timer = setInterval(() => {
       setProgress((prev) => {
-        if (prev < 100) {
-          return prev + 1;
+        if (prev >= 100) {
+          setCurrentAlertIndex((prev) => (prev + 1) % bencanaData.length);
+          return 0;
         }
-        return prev;
+        return prev + 1;
       });
     }, 100);
 
-    return () => clearInterval(progressInterval);
-  }, [currentAlertIndex]);
+    return () => clearInterval(timer);
+  }, [bencanaData.length]);
 
-  // Auto-scroll for victim data
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentVictimIndex((prev) => (prev + 1) % disasterData.length);
-      setVictimProgress(0);
-    }, 10000);
+  const getAlertLevel = (tingkat_peringatan: string) => {
+    console.log("Tingkat Peringatan:", tingkat_peringatan); // Debug log
+    switch (tingkat_peringatan?.toLowerCase()) {
+      case "berat":
+        return "Tinggi";
+      case "sedang":
+        return "Sedang";
+      case "ringan":
+        return "Ringan";
+      default:
+        return "Ringan";
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const getAlertColor = (tingkat_peringatan: string) => {
+    switch (tingkat_peringatan.toLowerCase()) {
+      case "berat":
+        return "bg-red-500";
+      case "sedang":
+        return "bg-yellow-500";
+      default:
+        return "bg-blue-500";
+    }
+  };
 
-  useEffect(() => {
-    const progressInterval = setInterval(() => {
-      setVictimProgress((prev) => {
-        if (prev < 100) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    }, 100);
-
-    return () => clearInterval(progressInterval);
-  }, [currentVictimIndex]);
-
-  // Auto-scroll for operational needs
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentNeedIndex((prev) => (prev + 1) % operationalNeeds.length);
-      setNeedProgress(0);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const progressInterval = setInterval(() => {
-      setNeedProgress((prev) => {
-        if (prev < 100) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    }, 100);
-
-    return () => clearInterval(progressInterval);
-  }, [currentNeedIndex]);
-
-  const renderDisasterTooltip = (disaster: (typeof disasterData)[0]) => {
+  const renderDisasterTooltip = (bencana: Bencana) => {
     return (
       <div className="p-3 max-w-[280px]">
         <div className="flex items-center gap-2 mb-2">
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${disaster.color}`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              bencana.status === "AKTIF"
+                ? "bg-red-500"
+                : bencana.status === "PEMANTAUAN"
+                ? "bg-amber-500"
+                : "bg-orange-500"
+            }`}
           >
-            {React.createElement(disaster.icon, {
-              className: "w-4 h-4 text-white",
-              strokeWidth: 2,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-            })}
+            {React.createElement(
+              bencana.status === "AKTIF"
+                ? AlertTriangle
+                : bencana.status === "PEMANTAUAN"
+                ? Eye
+                : AlertCircle,
+              { className: "w-4 h-4 text-white" }
+            )}
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white font-sans">
-              {disaster.name}
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              {bencana.jenis_bencana}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 font-sans">
-              {disaster.location}
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {bencana.lokasi?.nama_kecamatan}
             </p>
           </div>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-slate-600 dark:text-slate-400 font-sans">
+            <span className="text-sm text-slate-600 dark:text-slate-400">
               Status:
             </span>
             <Badge
               className={`
-                ${
-                  disaster.status === "Berlangsung"
-                    ? "bg-red-500"
-                    : disaster.status === "Pemantauan"
-                    ? "bg-amber-500"
-                    : "bg-orange-500"
-                } 
-                text-white border-none font-sans`}
+              ${
+                bencana.status === "AKTIF"
+                  ? "bg-red-500"
+                  : bencana.status === "PEMANTAUAN"
+                  ? "bg-amber-500"
+                  : "bg-orange-500"
+              } 
+              text-white border-none`}
             >
-              {disaster.status}
+              {bencana.status}
             </Badge>
           </div>
         </div>
@@ -900,21 +811,14 @@ const Index = () => {
     navigate(`/disaster/${disasterId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-jawara-dark">
-        <div className="flex flex-col items-center">
-          <AlertTriangle className="w-12 h-12 text-jawara-red animate-pulse" />
-          <h1 className="mt-4 text-2xl font-medium">JAWARA</h1>
-          <div className="mt-6 flex items-center">
-            <Loader className="w-5 h-5 mr-2 animate-spin" />
-            <span className="text-sm text-slate-500">
-              Memuat data bencana...
-            </span>
-          </div>
-        </div>
-      </div>
-    );
+  // Calculate pagination values
+  const indexOfLastCard = currentPage * cardsPerPage;
+  const indexOfFirstCard = indexOfLastCard - cardsPerPage;
+  const currentCards = bencanaData.slice(indexOfFirstCard, indexOfLastCard);
+  const totalPages = Math.ceil(bencanaData.length / cardsPerPage);
+
+  if (bencanaData.length === 0) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -964,12 +868,16 @@ const Index = () => {
                 <div className="relative">
                   <div
                     className={`alert-card glass-card rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg mb-6 overflow-hidden relative ${
-                      alertData[currentAlertIndex].level === "Tinggi"
+                      getAlertLevel(
+                        bencanaData[currentAlertIndex].tingkat_peringatan
+                      ) === "Tinggi"
                         ? "border border-red-500/50"
                         : ""
                     }`}
                   >
-                    {alertData[currentAlertIndex].level === "Tinggi" && (
+                    {getAlertLevel(
+                      bencanaData[currentAlertIndex].tingkat_peringatan
+                    ) === "Tinggi" && (
                       <>
                         <div className="absolute inset-0 bg-red-500/10 animate-pulse-glow"></div>
                         <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/20 to-red-500/0 animate-shimmer"></div>
@@ -979,16 +887,23 @@ const Index = () => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              alertData[currentAlertIndex].color
-                            } mr-4 ${
-                              alertData[currentAlertIndex].level === "Tinggi"
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${getAlertColor(
+                              bencanaData[currentAlertIndex].tingkat_peringatan
+                            )} mr-4 ${
+                              getAlertLevel(
+                                bencanaData[currentAlertIndex]
+                                  .tingkat_peringatan
+                              ) === "Tinggi"
                                 ? "shadow-[0_0_15px_rgba(239,68,68,0.5)]"
                                 : ""
                             }`}
                           >
                             {React.createElement(
-                              alertData[currentAlertIndex].icon,
+                              getIconByJenisBencana(
+                                bencanaData[currentAlertIndex].jenis_bencana
+                              ) as React.ComponentType<
+                                React.SVGProps<SVGSVGElement>
+                              >,
                               {
                                 className: "w-5 h-5 text-white",
                                 strokeWidth: 2,
@@ -999,23 +914,33 @@ const Index = () => {
                           </div>
                           <div>
                             <h3 className="font-semibold text-lg flex items-center">
-                              Peringatan {alertData[currentAlertIndex].type}
+                              Peringatan{" "}
+                              {bencanaData[currentAlertIndex].jenis_bencana}
                               <Badge
                                 className={`ml-3 ${
-                                  alertData[currentAlertIndex].level ===
-                                  "Tinggi"
+                                  getAlertLevel(
+                                    bencanaData[currentAlertIndex]
+                                      .tingkat_peringatan
+                                  ) === "Tinggi"
                                     ? "bg-red-500 text-white border-none shadow-[0_0_10px_rgba(239,68,68,0.3)]"
                                     : "bg-red-500 text-white border-none"
                                 }`}
                               >
-                                {alertData[currentAlertIndex].level}
+                                {getAlertLevel(
+                                  bencanaData[currentAlertIndex]
+                                    .tingkat_peringatan
+                                )}
                               </Badge>
                             </h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                              {alertData[currentAlertIndex].location} •{" "}
-                              {alertData[
-                                currentAlertIndex
-                              ].timestamp.toLocaleString("id-ID", {
+                              {
+                                bencanaData[currentAlertIndex].lokasi
+                                  ?.nama_kecamatan
+                              }{" "}
+                              •{" "}
+                              {new Date(
+                                bencanaData[currentAlertIndex].tanggal_bencana
+                              ).toLocaleString("id-ID", {
                                 day: "numeric",
                                 month: "long",
                                 year: "numeric",
@@ -1027,11 +952,11 @@ const Index = () => {
                         </div>
                       </div>
                       <p className="text-slate-700 dark:text-slate-300 mb-4">
-                        {alertData[currentAlertIndex].description}
+                        {bencanaData[currentAlertIndex].deskripsi}
                       </p>
                       <div className="flex justify-between items-center">
                         <Link
-                          to="/disaster-monitoring"
+                          to={`/disaster-monitoring/${bencanaData[currentAlertIndex].id}`}
                           className="text-jawara-blue hover:underline text-sm flex items-center"
                         >
                           Lihat detail <ArrowRight className="ml-1 w-4 h-4" />
@@ -1080,7 +1005,7 @@ const Index = () => {
                   Semua
                 </Button>
                 {Array.from(
-                  new Set(disasterData.map((disaster) => disaster.name))
+                  new Set(bencanaData.map((bencana) => bencana.jenis_bencana))
                 ).map((type) => (
                   <Button
                     key={type}
@@ -1104,33 +1029,44 @@ const Index = () => {
 
             <div className="space-y-6 lg:space-y-8">
               <div className="relative">
-                <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide">
-                  {disasterData
+                <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide cursor-pointer">
+                  {bencanaData
                     .filter(
-                      (disaster) =>
+                      (bencana) =>
                         selectedDisasterType === null ||
-                        disaster.name === selectedDisasterType
+                        bencana.jenis_bencana === selectedDisasterType
                     )
-                    .map((disaster) => (
+                    .map((bencana) => (
                       <div
-                        key={disaster.id}
+                        key={bencana.id}
                         className="disaster-card glass-card p-4 rounded-xl shadow-sm hover:shadow-lg flex-none w-[280px] transition-all duration-200 hover:scale-105"
                         onClick={() =>
-                          navigate(`/disaster-monitoring/${disaster.id}`)
+                          navigate(`/disaster-monitoring/${bencana.id}`)
                         }
                       >
                         <div className="flex items-center mb-3">
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${disaster.color} mr-3`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${getAlertColor(
+                              bencana.tingkat_peringatan
+                            )} mr-3`}
                           >
-                            {React.createElement(disaster.icon, {
-                              className: "w-4 h-4 text-white",
-                            })}
+                            {React.createElement(
+                              getIconByJenisBencana(
+                                bencana.jenis_bencana
+                              ) as React.ComponentType<
+                                React.SVGProps<SVGSVGElement>
+                              >,
+                              {
+                                className: "w-4 h-4 text-white",
+                              }
+                            )}
                           </div>
                           <div>
-                            <h3 className="font-medium">{disaster.name}</h3>
+                            <h3 className="font-medium">
+                              {bencana.jenis_bencana}
+                            </h3>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                              {disaster.location}
+                              {bencana.lokasi?.nama_kecamatan}
                             </p>
                           </div>
                         </div>
@@ -1138,18 +1074,24 @@ const Index = () => {
                           <Badge
                             className={`
                             ${
-                              disaster.status === "Berlangsung"
+                              bencana.status === "AKTIF"
                                 ? "bg-red-500"
-                                : disaster.status === "Pemantauan"
+                                : bencana.status === "PEMANTAUAN"
                                 ? "bg-amber-500"
                                 : "bg-orange-500"
                             } 
                             text-white border-none`}
                           >
-                            {disaster.status}
+                            {bencana.status}
                           </Badge>
                           <span className="text-sm text-slate-600 dark:text-slate-300">
-                            {disaster.affected} terdampak
+                            {new Date(
+                              bencana.tanggal_bencana
+                            ).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
                           </span>
                         </div>
                       </div>
@@ -1158,7 +1100,9 @@ const Index = () => {
                 {/* Scroll indicator */}
                 <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-slate-100 dark:from-slate-900/50 pointer-events-none"></div>
               </div>
-              <div className="h-[300px] sm:h-[350px] lg:h-[400px] rounded-xl overflow-hidden shadow-lg">
+
+              {/* Remove map section since we don't have coordinates */}
+              <div className="h-[300px] sm:h-[350px] lg:h-[400px] rounded-xl overflow-hidden shadow-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <MapContainer
                   center={[-7.0, 110.0]}
                   zoom={8}
@@ -1168,26 +1112,42 @@ const Index = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
-                  {disasterData
+                  {bencanaData
                     .filter(
-                      (disaster) =>
+                      (bencana) =>
                         selectedDisasterType === null ||
-                        disaster.name === selectedDisasterType
+                        bencana.jenis_bencana === selectedDisasterType
                     )
-                    .map((disaster) => (
+                    .map((bencana) => (
                       <Marker
-                        key={disaster.id}
-                        position={disaster.coordinates}
+                        key={bencana.id}
+                        position={[
+                          bencana.lokasi?.latitude,
+                          bencana.lokasi?.longitude,
+                        ]}
                         icon={L.divIcon({
-                          className: `w-8 h-8 rounded-full flex items-center justify-center ${disaster.color}`,
+                          className: `w-8 h-8 rounded-full flex items-center justify-center ${
+                            bencana.tingkat_peringatan === "BERAT"
+                              ? "bg-red-500"
+                              : bencana.tingkat_peringatan === "SEDANG"
+                              ? "bg-amber-500"
+                              : "bg-blue-500"
+                          }`,
                           html: ReactDOMServer.renderToString(
                             <div className="w-full h-full flex items-center justify-center">
-                              {React.createElement(disaster.icon, {
-                                className: "w-4 h-4 text-white",
-                                strokeWidth: 2,
-                                strokeLinecap: "round",
-                                strokeLinejoin: "round",
-                              })}
+                              {React.createElement(
+                                getIconByJenisBencana(
+                                  bencana.jenis_bencana
+                                ) as React.ComponentType<
+                                  React.SVGProps<SVGSVGElement>
+                                >,
+                                {
+                                  className: "w-4 h-4 text-white",
+                                  strokeWidth: 2,
+                                  strokeLinecap: "round",
+                                  strokeLinejoin: "round",
+                                }
+                              )}
                             </div>
                           ),
                           iconSize: [32, 32],
@@ -1196,13 +1156,13 @@ const Index = () => {
                         eventHandlers={{
                           mouseover: (e) => {
                             e.target.openTooltip();
-                            setHoveredDisaster(disaster.id);
+                            setHoveredDisaster(Number(bencana.id));
                           },
                           mouseout: (e) => {
                             e.target.closeTooltip();
                             setHoveredDisaster(null);
                           },
-                          click: () => handleMarkerClick(disaster.id),
+                          click: () => handleMarkerClick(Number(bencana.id)),
                         }}
                       >
                         <LeafletTooltip
@@ -1213,19 +1173,27 @@ const Index = () => {
                           opacity={1}
                           sticky={false}
                         >
-                          {renderDisasterTooltip(disaster)}
+                          {renderDisasterTooltip(bencana)}
                         </LeafletTooltip>
                         <Popup>
                           <div className="p-2">
-                            <h3 className="font-semibold">{disaster.name}</h3>
+                            <h3 className="font-semibold">
+                              {bencana.jenis_bencana}
+                            </h3>
                             <p className="text-sm text-slate-600">
-                              {disaster.location}
+                              {bencana.lokasi?.nama_kecamatan}
                             </p>
                             <p className="text-sm text-slate-500">
-                              Status: {disaster.status}
+                              Status: {bencana.status}
                             </p>
                             <p className="text-sm text-slate-500">
-                              {disaster.affected} terdampak
+                              {new Date(
+                                bencana.tanggal_bencana
+                              ).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })}
                             </p>
                           </div>
                         </Popup>
@@ -1248,113 +1216,184 @@ const Index = () => {
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {disasterData[currentVictimIndex].name}
-                </h3>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Object.entries(disasterData[currentVictimIndex].victimStatus)
-                  .slice(0, 3) // Only show 3 cards
-                  .map(([district, count], index) => (
-                    <div
-                      key={district}
-                      className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-lg transition-shadow"
-                    >
-                      <div className="flex justify-between items-center mb-4">
+                {currentCards.map((bencana) => (
+                  <div
+                    key={bencana.id}
+                    className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${getAlertColor(
+                            bencana.tingkat_peringatan
+                          )}`}
+                        >
+                          {React.createElement(
+                            getIconByJenisBencana(
+                              bencana.jenis_bencana
+                            ) as React.ComponentType<
+                              React.SVGProps<SVGSVGElement>
+                            >,
+                            {
+                              className: "w-5 h-5 text-white",
+                            }
+                          )}
+                        </div>
                         <div>
                           <h4 className="font-semibold text-slate-900 dark:text-white">
-                            {district}
+                            {bencana.lokasi?.nama_kecamatan}
                           </h4>
                           <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {disasterData[currentVictimIndex].name}
+                            {bencana.jenis_bencana}
                           </p>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="bg-slate-50 dark:bg-slate-900"
-                        >
-                          {Number(count).toLocaleString()} korban
-                        </Badge>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                          <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                            {Math.round(Number(count) * 0.8).toLocaleString()}
-                          </div>
-                          <div className="text-sm text-green-600/80 dark:text-green-400/80">
-                            Dievakuasi
-                          </div>
+                      <Badge
+                        variant="outline"
+                        className="bg-slate-50 dark:bg-slate-900"
+                      >
+                        {bencana.jumlah_korban
+                          ?.reduce(
+                            (total, korban) =>
+                              total +
+                              korban.jumlah_selamat +
+                              korban.jumlah_meninggal +
+                              korban.jumlah_hilang,
+                            0
+                          )
+                          .toLocaleString()}{" "}
+                        korban
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                        <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                          {bencana.jumlah_korban
+                            ?.reduce(
+                              (total, korban) => total + korban.jumlah_selamat,
+                              0
+                            )
+                            .toLocaleString()}
                         </div>
-                        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                          <div className="text-lg font-semibold text-red-600 dark:text-red-400">
-                            {Math.round(Number(count) * 0.2).toLocaleString()}
-                          </div>
-                          <div className="text-sm text-red-600/80 dark:text-red-400/80">
-                            Belum Dievakuasi
-                          </div>
+                        <div className="text-sm text-green-600/80 dark:text-green-400/80">
+                          Selamat
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <h5 className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                          Kebutuhan Operasional
-                        </h5>
-                        {disasterData[currentVictimIndex].aidNeeds
-                          .slice(0, 2) // Only show 2 needs per card
-                          .map((need, idx) => (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                        <div className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
+                          {bencana.jumlah_korban
+                            ?.reduce(
+                              (total, korban) =>
+                                total + korban.jumlah_meninggal,
+                              0
+                            )
+                            .toLocaleString()}
+                        </div>
+                        <div className="text-sm text-yellow-600/80 dark:text-yellow-400/80">
+                          Meninggal
+                        </div>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                        <div className="text-lg font-semibold text-red-600 dark:text-red-400">
+                          {bencana.jumlah_korban
+                            ?.reduce(
+                              (total, korban) => total + korban.jumlah_hilang,
+                              0
+                            )
+                            .toLocaleString()}
+                        </div>
+                        <div className="text-sm text-red-600/80 dark:text-red-400/80">
+                          Hilang
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <h5 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Kebutuhan Operasional
+                      </h5>
+                      {bencana.kebutuhan?.map((kebutuhan) => {
+                        const labels = getKebutuhanLabels(kebutuhan);
+                        return labels.map((item) => {
+                          const percentage = Math.round(
+                            (item.value / item.max) * 100
+                          );
+                          return (
                             <div
-                              key={idx}
+                              key={item.key}
                               className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg"
                             >
                               <div className="flex justify-between items-center mb-2">
                                 <span className="font-medium text-slate-900 dark:text-white">
-                                  {need.item}
+                                  {item.label}
                                 </span>
-                                <Badge className={need.color}>
-                                  {need.priority}
+                                <Badge className={item.color}>
+                                  {item.level}
                                 </Badge>
                               </div>
                               <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                                 <span>
-                                  {need.current} / {need.quantity}
+                                  {item.value} / {item.max}
                                 </span>
-                                <span>
-                                  {Math.round(
-                                    (need.current / need.quantity) * 100
-                                  )}
-                                  %
-                                </span>
+                                <span>{percentage}%</span>
                               </div>
                               <Progress
-                                value={(need.current / need.quantity) * 100}
+                                value={percentage}
                                 className="h-2 mt-1"
                               />
                             </div>
-                          ))}
-                      </div>
+                          );
+                        });
+                      })}
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
 
-              <div className="flex justify-between items-center mt-6">
+              {/* Add pagination controls */}
+              <div className="flex justify-center items-center gap-2 mt-6">
                 <Button
                   variant="outline"
-                  className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
                   onClick={() =>
-                    navigate(
-                      `/disaster-monitoring/${disasterData[currentVictimIndex].id}`
-                    )
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
+                  disabled={currentPage === 1}
+                  className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
                 >
-                  Lihat Detail
+                  <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <div className="flex items-center">
-                  <div className="text-sm text-slate-500 mr-2">
-                    Update berikutnya dalam
-                  </div>
-                  <Progress value={victimProgress} className="w-24 h-2" />
+
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <Button
+                        key={pageNum}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={
+                          currentPage === pageNum
+                            ? "bg-jawara-blue text-white"
+                            : "text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
+                        }
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  )}
                 </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           </div>

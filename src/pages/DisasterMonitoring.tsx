@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AlertTriangle,
   FileWarning,
@@ -15,6 +15,12 @@ import {
   Search,
   SlidersHorizontal,
   Download,
+  Mountain,
+  Triangle,
+  Activity,
+  TreePine,
+  Wind,
+  Flame,
 } from "lucide-react";
 import {
   Card,
@@ -29,234 +35,201 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 import "@/styles/animations.css";
+import { getAllBencana, getAllJumlahKorban, getAllRelawan } from "@/lib/api";
+import type { Bencana, JumlahKorban, Relawan } from "@/lib/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Fix for default marker icons in Leaflet
-const iconRetinaUrl =
-  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png";
-const iconUrl =
-  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png";
-const shadowUrl =
-  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png";
-
-// Custom marker icons
-const createCustomIcon = (color: string) => {
-  return L.divIcon({
-    className: "custom-div-icon",
-    html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px ${color}"></div>`,
-    iconSize: [12, 12],
-    iconAnchor: [6, 6],
-  });
+const getIconByJenisBencana = (jenis_bencana: string) => {
+  switch (jenis_bencana?.toLowerCase()) {
+    case "banjir":
+      return Waves;
+    case "longsor":
+    case "tanah longsor":
+      return Mountain;
+    case "gunung berapi":
+    case "erupsi":
+      return Triangle;
+    case "gempa bumi":
+      return Activity;
+    case "kebakaran hutan":
+      return TreePine;
+    case "angin kencang":
+    case "angin puting beliung":
+      return Wind;
+    case "kebakaran":
+      return Flame;
+    default:
+      return AlertTriangle;
+  }
 };
 
-// Add custom CSS for marker colors
-const style = document.createElement("style");
-style.textContent = `
-  .custom-marker-red .leaflet-marker-icon {
-    filter: hue-rotate(0deg) saturate(2) brightness(0.8);
+const getAlertColor = (tingkat_peringatan: string) => {
+  switch (tingkat_peringatan?.toLowerCase()) {
+    case "berat":
+      return "bg-red-500";
+    case "sedang":
+      return "bg-amber-500";
+    default:
+      return "bg-blue-500";
   }
-  .custom-marker-amber .leaflet-marker-icon {
-    filter: hue-rotate(40deg) saturate(2) brightness(0.9);
-  }
-  .custom-marker-blue .leaflet-marker-icon {
-    filter: hue-rotate(200deg) saturate(2) brightness(0.9);
-  }
-`;
-document.head.appendChild(style);
-
-// Mock data
-const disasterData = [
-  {
-    id: 1,
-    type: "Banjir",
-    location: "Kecamatan Semarang Utara",
-    status: "Berlangsung",
-    severity: "Tinggi",
-    affected: 1250,
-    lastUpdate: "10 menit yang lalu",
-    description:
-      "Curah hujan tinggi menyebabkan potensi banjir di daerah dataran rendah Semarang.",
-    icon: Waves,
-    color: "bg-blue-500",
-    coordinates: [-6.9667, 110.4167] as [number, number],
-    markerColor: "#ef4444", // red
-  },
-  {
-    id: 2,
-    type: "Longsor",
-    location: "Kecamatan Temanggung",
-    status: "Pemantauan",
-    severity: "Sedang",
-    affected: 342,
-    lastUpdate: "30 menit yang lalu",
-    description:
-      "Ketidakstabilan tanah terbaru di lereng bukit dekat Magelang. Warga diharapkan waspada.",
-    icon: FileWarning,
-    color: "bg-amber-500",
-    coordinates: [-7.3167, 110.1833] as [number, number],
-    markerColor: "#f59e0b", // amber
-  },
-  {
-    id: 3,
-    type: "Aktivitas Gunung Berapi",
-    location: "Kecamatan Cangkringan",
-    status: "Peringatan",
-    severity: "Tinggi",
-    affected: 520,
-    lastUpdate: "1 jam yang lalu",
-    description:
-      "Peningkatan aktivitas vulkanik terdeteksi. Prosedur evakuasi telah dimulai.",
-    icon: AlertCircle,
-    color: "bg-red-500",
-    coordinates: [-7.54, 110.4467] as [number, number],
-    markerColor: "#ef4444", // red
-  },
-  {
-    id: 4,
-    type: "Banjir",
-    location: "Kecamatan Pekalongan Utara",
-    status: "Berlangsung",
-    severity: "Sedang",
-    affected: 800,
-    lastUpdate: "15 menit yang lalu",
-    description: "Luapan sungai di Pekalongan menyebabkan banjir sedang.",
-    icon: Waves,
-    color: "bg-blue-500",
-    coordinates: [-6.8883, 109.6753] as [number, number],
-    markerColor: "#f59e0b", // amber
-  },
-  {
-    id: 5,
-    type: "Gempa Bumi",
-    location: "Kecamatan Wonosobo",
-    status: "Peringatan",
-    severity: "Tinggi",
-    affected: 1200,
-    lastUpdate: "5 menit yang lalu",
-    description: "Gempa bumi berkekuatan 5.2 SR terdeteksi di area Wonosobo.",
-    icon: AlertCircle,
-    color: "bg-red-500",
-    coordinates: [-7.363, 109.9] as [number, number],
-    markerColor: "#ef4444", // red
-  },
-  {
-    id: 6,
-    type: "Banjir",
-    location: "Kecamatan Tegal Barat",
-    status: "Pemantauan",
-    severity: "Rendah",
-    affected: 300,
-    lastUpdate: "1 jam yang lalu",
-    description: "Banjir ringan di area pesisir Tegal.",
-    icon: Waves,
-    color: "bg-blue-500",
-    coordinates: [-6.8667, 109.1333] as [number, number],
-    markerColor: "#3b82f6", // blue
-  },
-  {
-    id: 7,
-    type: "Longsor",
-    location: "Kecamatan Purworejo",
-    status: "Peringatan",
-    severity: "Tinggi",
-    affected: 600,
-    lastUpdate: "20 menit yang lalu",
-    description: "Longsor besar dilaporkan di perbukitan Purworejo.",
-    icon: AlertCircle,
-    color: "bg-red-500",
-    coordinates: [-7.7, 110.0167] as [number, number],
-    markerColor: "#ef4444", // red
-  },
-  {
-    id: 8,
-    type: "Banjir",
-    location: "Kecamatan Kendal",
-    status: "Pemantauan",
-    severity: "Rendah",
-    affected: 250,
-    lastUpdate: "45 menit yang lalu",
-    description: "Banjir ringan di area permukiman Kendal.",
-    icon: Waves,
-    color: "bg-blue-500",
-    coordinates: [-6.9167, 110.2] as [number, number],
-    markerColor: "#3b82f6", // blue
-  },
-  {
-    id: 9,
-    type: "Longsor",
-    location: "Kecamatan Magelang Utara",
-    status: "Pemantauan",
-    severity: "Sedang",
-    affected: 400,
-    lastUpdate: "30 menit yang lalu",
-    description: "Risiko longsor sedang di perbukitan Magelang.",
-    icon: FileWarning,
-    color: "bg-amber-500",
-    coordinates: [-7.4667, 110.1833] as [number, number],
-    markerColor: "#f59e0b", // amber
-  },
-  {
-    id: 10,
-    type: "Banjir",
-    location: "Kecamatan Salatiga",
-    status: "Pemantauan",
-    severity: "Rendah",
-    affected: 200,
-    lastUpdate: "1 jam yang lalu",
-    description: "Banjir ringan di area perkotaan Salatiga.",
-    icon: Waves,
-    color: "bg-blue-500",
-    coordinates: [-7.3333, 110.5] as [number, number],
-    markerColor: "#3b82f6", // blue
-  },
-];
-
-const statsData = [
-  {
-    label: "Bencana Aktif",
-    value: 3,
-    icon: AlertTriangle,
-    color: "text-red-500",
-    bgColor:
-      "from-red-500/10 via-red-400/5 to-red-300/10 dark:from-red-500/20 dark:via-red-400/10 dark:to-red-300/20",
-    iconBg: "bg-red-500/20",
-  },
-  {
-    label: "Korban Terdampak",
-    value: 2112,
-    icon: Users,
-    color: "text-blue-500",
-    bgColor:
-      "from-blue-500/10 via-blue-400/5 to-blue-300/10 dark:from-blue-500/20 dark:via-blue-400/10 dark:to-blue-300/20",
-    iconBg: "bg-blue-500/20",
-  },
-  {
-    label: "Area Berisiko Tinggi",
-    value: 5,
-    icon: MapPin,
-    color: "text-amber-500",
-    bgColor:
-      "from-amber-500/10 via-amber-400/5 to-amber-300/10 dark:from-amber-500/20 dark:via-amber-400/10 dark:to-amber-300/20",
-    iconBg: "bg-amber-500/20",
-  },
-  {
-    label: "Tim Tanggap",
-    value: 12,
-    icon: HandHelping,
-    color: "text-green-500",
-    bgColor:
-      "from-green-500/10 via-green-400/5 to-green-300/10 dark:from-green-500/20 dark:via-green-400/10 dark:to-green-300/20",
-    iconBg: "bg-green-500/20",
-  },
-];
+};
 
 const DisasterMonitoring = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [bencanaData, setBencanaData] = useState<Bencana[]>([]);
+  const [jumlahKorbanData, setJumlahKorbanData] = useState<JumlahKorban[]>([]);
+  const [relawanData, setRelawanData] = useState<Relawan[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 5;
   const navigate = useNavigate();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    jenisBencana: "all",
+    status: "all",
+    tingkatPeringatan: "all",
+    kecamatan: "all",
+  });
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [bencana, jumlahKorban, relawan] = await Promise.all([
+          getAllBencana(),
+          getAllJumlahKorban(),
+          getAllRelawan(),
+        ]);
+
+        setBencanaData(bencana);
+        setJumlahKorbanData(jumlahKorban);
+        setRelawanData(relawan);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Update stats labels to Indonesian
+  const statsData = [
+    {
+      label: "Bencana Aktif",
+      value: bencanaData.filter((b) => b.status === "AKTIF").length,
+      icon: AlertTriangle,
+      color: "text-red-500",
+      bgColor:
+        "from-red-500/10 via-red-400/5 to-red-300/10 dark:from-red-500/20 dark:via-red-400/10 dark:to-red-300/20",
+      iconBg: "bg-red-500/20",
+    },
+    {
+      label: "Korban Terdampak",
+      value: jumlahKorbanData.reduce(
+        (total, korban) =>
+          total +
+          korban.jumlah_selamat +
+          korban.jumlah_meninggal +
+          korban.jumlah_hilang,
+        0
+      ),
+      icon: Users,
+      color: "text-blue-500",
+      bgColor:
+        "from-blue-500/10 via-blue-400/5 to-blue-300/10 dark:from-blue-500/20 dark:via-blue-400/10 dark:to-blue-300/20",
+      iconBg: "bg-blue-500/20",
+    },
+    {
+      label: "Area Berisiko Tinggi",
+      value: bencanaData.filter((b) => b.tingkat_peringatan === "BERAT").length,
+      icon: MapPin,
+      color: "text-amber-500",
+      bgColor:
+        "from-amber-500/10 via-amber-400/5 to-amber-300/10 dark:from-amber-500/20 dark:via-amber-400/10 dark:to-amber-300/20",
+      iconBg: "bg-amber-500/20",
+    },
+    {
+      label: "Tim Tanggap",
+      value: relawanData.length,
+      icon: HandHelping,
+      color: "text-green-500",
+      bgColor:
+        "from-green-500/10 via-green-400/5 to-green-300/10 dark:from-green-500/20 dark:via-green-400/10 dark:to-green-300/20",
+      iconBg: "bg-green-500/20",
+    },
+  ];
+
+  const getUniqueValues = (data: Bencana[], key: keyof Bencana): string[] => {
+    const values = new Set(data.map((item) => String(item[key])));
+    return Array.from(values).filter(Boolean);
+  };
+
+  const getFilteredData = (data: Bencana[]) => {
+    return data.filter((bencana) => {
+      const bencanaDate = bencana.tanggal_bencana
+        ? new Date(bencana.tanggal_bencana)
+        : null;
+      const isInDateRange =
+        !dateRange.from || !dateRange.to || !bencanaDate
+          ? true
+          : bencanaDate >= dateRange.from && bencanaDate <= dateRange.to;
+
+      return (
+        (filters.jenisBencana === "all" ||
+          bencana.jenis_bencana === filters.jenisBencana) &&
+        (filters.status === "all" || bencana.status === filters.status) &&
+        (filters.tingkatPeringatan === "all" ||
+          bencana.tingkat_peringatan === filters.tingkatPeringatan) &&
+        (filters.kecamatan === "all" ||
+          bencana.lokasi?.nama_kecamatan === filters.kecamatan) &&
+        isInDateRange
+      );
+    });
+  };
+
+  const filteredData = getFilteredData(bencanaData);
+  const indexOfLastCard = currentPage * cardsPerPage;
+  const indexOfFirstCard = indexOfLastCard - cardsPerPage;
+  const currentCards = filteredData.slice(indexOfFirstCard, indexOfLastCard);
+  const totalPages = Math.ceil(filteredData.length / cardsPerPage);
+
+  const isAnyFilterActive = () => {
+    return (
+      Object.values(filters).some((value) => value !== "all") ||
+      dateRange.from !== undefined ||
+      dateRange.to !== undefined
+    );
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -314,63 +287,6 @@ const DisasterMonitoring = () => {
           </div>
         </section>
 
-        {/* Map Section */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                Peta Bencana
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400">
-                Visualisasi lokasi bencana secara real-time
-              </p>
-            </div>
-            <div className="h-[500px] rounded-lg overflow-hidden shadow-lg">
-              <MapContainer
-                center={[-7.27, 110.42]} // Central Java coordinates
-                zoom={8}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {disasterData.map((disaster) => (
-                  <Marker
-                    key={disaster.id}
-                    position={disaster.coordinates}
-                    icon={createCustomIcon(disaster.markerColor)}
-                  >
-                    <Popup>
-                      <div className="p-2">
-                        <h3 className="font-bold">{disaster.type}</h3>
-                        <p className="text-sm">{disaster.location}</p>
-                        <p className="text-sm text-slate-500">
-                          {disaster.description}
-                        </p>
-                        <div className="mt-2">
-                          <Badge
-                            className={`${
-                              disaster.status === "Berlangsung"
-                                ? "bg-red-500"
-                                : disaster.status === "Pemantauan"
-                                ? "bg-amber-500"
-                                : "bg-orange-500"
-                            } 
-                            text-white border-none`}
-                          >
-                            {disaster.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </div>
-          </div>
-        </section>
-
         {/* Main Content */}
         <section className="py-12 md:py-20 bg-slate-50 dark:bg-jawara-dark/30">
           <div className="container mx-auto px-4 md:px-6">
@@ -386,97 +302,419 @@ const DisasterMonitoring = () => {
               </div>
 
               <div className="mt-4 md:mt-0 flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    placeholder="Cari bencana..."
-                    className="pl-10 w-[200px]"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span>Filter</span>
-                </Button>
+                <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 relative"
+                    >
+                      <SlidersHorizontal className="w-4 h-4" />
+                      <span>Saring</span>
+                      {isAnyFilterActive() && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-jawara-blue rounded-full" />
+                      )}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Filter Bencana</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">
+                          Jenis Bencana
+                        </label>
+                        <Select
+                          value={filters.jenisBencana}
+                          onValueChange={(value) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              jenisBencana: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih jenis bencana" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua</SelectItem>
+                            {getUniqueValues(bencanaData, "jenis_bencana").map(
+                              (jenis) => (
+                                <SelectItem key={jenis} value={jenis}>
+                                  {jenis}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Status</label>
+                        <Select
+                          value={filters.status}
+                          onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, status: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua</SelectItem>
+                            {getUniqueValues(bencanaData, "status").map(
+                              (status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">
+                          Tingkat Peringatan
+                        </label>
+                        <Select
+                          value={filters.tingkatPeringatan}
+                          onValueChange={(value) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              tingkatPeringatan: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih tingkat peringatan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua</SelectItem>
+                            {getUniqueValues(
+                              bencanaData,
+                              "tingkat_peringatan"
+                            ).map((tingkat) => (
+                              <SelectItem key={tingkat} value={tingkat}>
+                                {tingkat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Kecamatan</label>
+                        <Select
+                          value={filters.kecamatan}
+                          onValueChange={(value) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              kecamatan: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih kecamatan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua</SelectItem>
+                            {bencanaData
+                              .map((b) => b.lokasi?.nama_kecamatan)
+                              .filter((kecamatan): kecamatan is string =>
+                                Boolean(kecamatan)
+                              )
+                              .filter(
+                                (value, index, self) =>
+                                  self.indexOf(value) === index
+                              )
+                              .map((kecamatan) => (
+                                <SelectItem key={kecamatan} value={kecamatan}>
+                                  {kecamatan}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">
+                          Rentang Tanggal
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "justify-start text-left font-normal",
+                                  !dateRange.from && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange.from ? (
+                                  format(dateRange.from, "PPP", { locale: id })
+                                ) : (
+                                  <span>Dari</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={dateRange.from}
+                                onSelect={(date) =>
+                                  setDateRange((prev) => ({
+                                    ...prev,
+                                    from: date,
+                                  }))
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "justify-start text-left font-normal",
+                                  !dateRange.to && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange.to ? (
+                                  format(dateRange.to, "PPP", { locale: id })
+                                ) : (
+                                  <span>Sampai</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={dateRange.to}
+                                onSelect={(date) =>
+                                  setDateRange((prev) => ({
+                                    ...prev,
+                                    to: date,
+                                  }))
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setFilters({
+                            jenisBencana: "all",
+                            status: "all",
+                            tingkatPeringatan: "all",
+                            kecamatan: "all",
+                          });
+                          setDateRange({ from: undefined, to: undefined });
+                        }}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={() => setIsFilterOpen(false)}
+                        className="bg-jawara-blue text-white hover:bg-jawara-blue/90"
+                      >
+                        Terapkan
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-              {disasterData.map((disaster) => (
-                <Card
-                  key={disaster.id}
-                  className="disaster-card glass-card overflow-hidden"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center ${disaster.color}`}
-                        >
-                          <disaster.icon className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold">
-                            {disaster.type}
-                          </h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {disaster.location}
-                          </p>
-                        </div>
-                      </div>
+              {filteredData.length > 0 ? (
+                currentCards.map((bencana) => {
+                  const totalKorban =
+                    bencana.jumlah_korban?.reduce(
+                      (total, korban) =>
+                        total +
+                        korban.jumlah_selamat +
+                        korban.jumlah_meninggal +
+                        korban.jumlah_hilang,
+                      0
+                    ) || 0;
 
-                      <div className="flex flex-wrap gap-2">
-                        <Badge
-                          className={`
+                  return (
+                    <Card
+                      key={bencana.id}
+                      className="disaster-card glass-card overflow-hidden"
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`w-12 h-12 rounded-full flex items-center justify-center ${getAlertColor(
+                                bencana.tingkat_peringatan
+                              )}`}
+                            >
+                              {React.createElement(
+                                getIconByJenisBencana(
+                                  bencana.jenis_bencana
+                                ) as React.ComponentType<
+                                  React.SVGProps<SVGSVGElement>
+                                >,
+                                {
+                                  className: "w-6 h-6 text-white",
+                                }
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-semibold">
+                                {bencana.jenis_bencana}
+                              </h3>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">
+                                {bencana.lokasi?.nama_kecamatan}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Badge
+                              className={`
                           ${
-                            disaster.status === "Berlangsung"
+                            bencana.status === "AKTIF"
                               ? "bg-red-500"
-                              : disaster.status === "Pemantauan"
-                              ? "bg-amber-500"
-                              : "bg-orange-500"
+                              : "bg-green-500"
                           } 
                           text-white border-none`}
-                        >
-                          {disaster.status}
-                        </Badge>
-                        <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none">
-                          {disaster.severity} Severity
-                        </Badge>
-                        <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none">
-                          {disaster.affected.toLocaleString()} Affected
-                        </Badge>
-                      </div>
-                    </div>
+                            >
+                              {bencana.status}
+                            </Badge>
+                            <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none">
+                              Tingkat {bencana.tingkat_peringatan.toLowerCase()}
+                            </Badge>
+                            <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none">
+                              {totalKorban.toLocaleString()} Terdampak
+                            </Badge>
+                          </div>
+                        </div>
 
-                    <div className="mt-4">
-                      <p className="text-slate-600 dark:text-slate-300">
-                        {disaster.description}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                        Last updated: {disaster.lastUpdate}
-                      </p>
-                    </div>
+                        <div className="mt-4">
+                          <p className="text-slate-600 dark:text-slate-300">
+                            {bencana.deskripsi}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                            Terakhir diperbarui:{" "}
+                            {new Date(bencana.tanggal_bencana).toLocaleString(
+                              "id-ID",
+                              {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </p>
+                        </div>
 
-                    <div className="mt-6 flex justify-end">
+                        <div className="mt-6 flex justify-end">
+                          <Button
+                            variant="outline"
+                            className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
+                            onClick={() =>
+                              navigate(`/disaster-monitoring/${bencana.id}`)
+                            }
+                          >
+                            Lihat Detail
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                    <Search className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Tidak Ada Data
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 max-w-sm">
+                    Tidak ditemukan bencana yang sesuai dengan filter yang
+                    dipilih. Silakan coba filter yang berbeda.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="mt-4 text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
+                    onClick={() => {
+                      setFilters({
+                        jenisBencana: "all",
+                        status: "all",
+                        tingkatPeringatan: "all",
+                        kecamatan: "all",
+                      });
+                      setIsFilterOpen(false);
+                    }}
+                  >
+                    Reset Filter
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {filteredData.length > 0 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
+                >
+                  Sebelumnya
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
                       <Button
-                        variant="outline"
-                        className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
-                        onClick={() =>
-                          navigate(`/disaster-monitoring/${disaster.id}`)
+                        key={pageNum}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={
+                          currentPage === pageNum
+                            ? "bg-jawara-blue text-white"
+                            : "text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
                         }
                       >
-                        Lihat Detail
+                        {pageNum}
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    )
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="text-jawara-blue border-jawara-blue hover:bg-jawara-blue/10"
+                >
+                  Selanjutnya
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       </main>
