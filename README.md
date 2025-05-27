@@ -1,69 +1,57 @@
-# Welcome to your Lovable project
+# Jawara — Disaster Management Platform
 
-## Project info
+**Jawara** is an integrated web-based disaster management platform designed to assist with disaster response in a fast, structured, and efficient manner. This system enables public users to access disaster information while providing admin users with tools to manage disaster-related data, logistics, volunteers, and donations.
 
-**URL**: https://lovable.dev/projects/d1058aa6-ff23-4865-9a34-b607570a3c34
+## Features
 
-## How can I edit this code?
+### For Public Users (Guest)
+- View ongoing disaster events.
+- Track the logistics and urgent needs of each disaster.
+- Access emergency contact information and evacuation center data.
+- View missing victims and victim impact data.
+- Submit donations.
 
-There are several ways of editing your application.
+### For Admin Users
+- Admin dashboard login.
+- Full CRUD capabilities for disaster data, logistics needs, donations, evacuation centers, volunteers, and more.
+- Accessible only for authenticated users with the `admin` or `super_admin` role.
 
-**Use Lovable**
+### For Super Admin
+- Super admin account is seeded initially.
+- Responsible for approving admin registration requests.
+- Full access to user management and system data.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d1058aa6-ff23-4865-9a34-b607570a3c34) and start prompting.
+## Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
+### Frontend
+- React + TypeScript
 - Tailwind CSS
+- Fetch API (REST)
+- JWT-based Authentication
 
-## How can I deploy this project?
+### Backend
+- Express.js (TypeScript)
+- Prisma ORM + PostgreSQL
+- JWT Authentication
+- Modular feature-based structure
+- Role-based access control
+- Seeding support for initial super admin account
 
-Simply open [Lovable](https://lovable.dev/projects/d1058aa6-ff23-4865-9a34-b607570a3c34) and click on Share -> Publish.
 
-## I want to use a custom domain - is that possible?
+## Authentication & Roles
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- **JWT** is used for login authentication and route protection.
+- **User roles**:
+  - `guest`: Unauthenticated users.
+  - `admin`: Authenticated users with dashboard access.
+  - `super_admin`: Highest-level access, can approve admin users.
+
+### Auth Endpoints
+- `POST /api/auth/register`: Register a new admin account (pending approval).
+- `POST /api/auth/login`: Login for approved admin users.
+- `GET /api/users/pending`: View unapproved admin accounts (super_admin only).
+- `PATCH /api/users/:id/approve`: Approve admin registration (super_admin only).
+
+## Login Account
+- email: superadmin@jawara.my.id
+- password: admin123
