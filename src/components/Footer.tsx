@@ -1,6 +1,13 @@
-
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Instagram, Mail, MapPin, Phone, AlertTriangle } from "lucide-react";
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  Mail,
+  MapPin,
+  Phone,
+  AlertTriangle,
+} from "lucide-react";
 
 const Footer = () => {
   return (
@@ -10,10 +17,13 @@ const Footer = () => {
           <div className="space-y-4">
             <Link to="/" className="flex items-center space-x-2">
               <AlertTriangle className="w-5 h-5 text-jawara-red" />
-              <span className="text-lg font-semibold tracking-tight">JAWARA</span>
+              <span className="text-lg font-semibold tracking-tight">
+                JAWARA
+              </span>
             </Link>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs">
-              Jawa Tengah Rescue Aid - providing early disaster warning, monitoring, and relief coordination for Central Java.
+              Jawa Tengah Rescue Aid - providing early disaster warning,
+              monitoring, and relief coordination for Central Java.
             </p>
             <div className="flex space-x-4">
               <a
@@ -39,10 +49,20 @@ const Footer = () => {
               </a>
             </div>
           </div>
-          
+
           <div>
-            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Quick Links</h3>
+            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">
+              Quick Links
+            </h3>
             <ul className="space-y-2">
+              <li>
+                <Link
+                  to="/"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-jawara-blue dark:hover:text-jawara-blue transition-colors"
+                >
+                  Home
+                </Link>
+              </li>
               <li>
                 <Link
                   to="/disaster-monitoring"
@@ -51,35 +71,13 @@ const Footer = () => {
                   Disaster Monitoring
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/victim-tracking"
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-jawara-blue dark:hover:text-jawara-blue transition-colors"
-                >
-                  Victim Tracking
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/aid-monitoring"
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-jawara-blue dark:hover:text-jawara-blue transition-colors"
-                >
-                  Aid Needs
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/volunteer"
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-jawara-blue dark:hover:text-jawara-blue transition-colors"
-                >
-                  Volunteer
-                </Link>
-              </li>
             </ul>
           </div>
-          
+
           <div>
-            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Resources</h3>
+            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">
+              Resources
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -115,14 +113,17 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           <div>
-            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Contact Us</h3>
+            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">
+              Contact Us
+            </h3>
             <ul className="space-y-3">
               <li className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-jawara-blue mt-0.5" />
                 <span className="text-sm text-slate-600 dark:text-slate-400">
-                  Central Java Disaster Management Agency, Jl. Pahlawan No. 10, Semarang
+                  Central Java Disaster Management Agency, Jl. Pahlawan No. 10,
+                  Semarang
                 </span>
               </li>
               <li className="flex items-center space-x-3">
@@ -140,7 +141,7 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-slate-200 dark:border-slate-800 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             © {new Date().getFullYear()} JAWARA. All rights reserved.

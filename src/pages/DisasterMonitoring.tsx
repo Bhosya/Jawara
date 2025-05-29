@@ -37,8 +37,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import "@/styles/animations.css";
-import { getAllBencana, getAllJumlahKorban, getAllRelawan } from "@/lib/api";
-import type { Bencana, JumlahKorban, Relawan } from "@/lib/types";
+import { bencanaApi, jumlahKorbanApi, relawanApi } from "@/services/api";
+import type { Bencana, JumlahKorban, Relawan } from "@/types/models";
 import {
   Dialog,
   DialogContent,
@@ -126,9 +126,9 @@ const DisasterMonitoring = () => {
     const fetchData = async () => {
       try {
         const [bencana, jumlahKorban, relawan] = await Promise.all([
-          getAllBencana(),
-          getAllJumlahKorban(),
-          getAllRelawan(),
+          bencanaApi.getAll(),
+          jumlahKorbanApi.getAll(),
+          relawanApi.getAll(),
         ]);
 
         setBencanaData(bencana);

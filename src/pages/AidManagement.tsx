@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -13,286 +13,176 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2, Info } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Pagination from "@/components/Pagination";
 import AdminSidebar from "@/components/AdminSidebar";
 import { Badge } from "@/components/ui/badge";
+import { donasiApi, bencanaApi } from "@/services/api";
+import { Donasi, Bencana } from "@/types/models";
+import { toast } from "sonner";
 
-interface Aid {
-  id: string;
-  name: string;
-  type: string;
-  quantity: number;
-  unit: string;
-  disasterId: string;
-  donor: string;
-  status: string;
-  notes: string;
-}
+type DonasiInput = {
+  nama_donatur: string;
+  nominal: number;
+  metode_pembayaran: string;
+  tanggal_donasi: string;
+  id_bencana: string;
+};
 
 const AidManagement = () => {
   const navigate = useNavigate();
-  const [aids, setAids] = useState<Aid[]>([
-    {
-      id: "1",
-      name: "Bantuan Makanan Pokok",
-      type: "Makanan",
-      quantity: 100,
-      unit: "Paket",
-      disasterId: "1",
-      donor: "PT Sejahtera",
-      status: "Pending",
-      notes: "Akan dikirim dalam 2 hari",
-    },
-    {
-      id: "2",
-      name: "Selimut",
-      type: "Pakaian",
-      quantity: 50,
-      unit: "Buah",
-      disasterId: "2",
-      donor: "Yayasan Peduli",
-      status: "Received",
-      notes: "Sudah diterima di posko",
-    },
-    {
-      id: "3",
-      name: "Air Mineral",
-      type: "Minuman",
-      quantity: 200,
-      unit: "Kardus",
-      disasterId: "3",
-      donor: "PT Aqua",
-      status: "Distributed",
-      notes: "Sudah didistribusikan ke pengungsi",
-    },
-    {
-      id: "4",
-      name: "Obat-obatan",
-      type: "Kesehatan",
-      quantity: 30,
-      unit: "Paket",
-      disasterId: "4",
-      donor: "RS Medika",
-      status: "Pending",
-      notes: "Dalam proses pengiriman",
-    },
-    {
-      id: "5",
-      name: "Tenda Pengungsian",
-      type: "Shelter",
-      quantity: 10,
-      unit: "Unit",
-      disasterId: "5",
-      donor: "PMI",
-      status: "Received",
-      notes: "Sudah dipasang di lokasi",
-    },
-    {
-      id: "6",
-      name: "Pakaian Layak Pakai",
-      type: "Pakaian",
-      quantity: 150,
-      unit: "Paket",
-      disasterId: "6",
-      donor: "Komunitas Peduli",
-      status: "Distributed",
-      notes: "Sudah didistribusikan",
-    },
-    {
-      id: "7",
-      name: "Makanan Instan",
-      type: "Makanan",
-      quantity: 300,
-      unit: "Paket",
-      disasterId: "7",
-      donor: "PT Indofood",
-      status: "Pending",
-      notes: "Akan dikirim minggu depan",
-    },
-    {
-      id: "8",
-      name: "Alat Masak",
-      type: "Perlengkapan",
-      quantity: 20,
-      unit: "Set",
-      disasterId: "8",
-      donor: "Yayasan Bantuan",
-      status: "Received",
-      notes: "Sudah diterima di posko",
-    },
-    {
-      id: "9",
-      name: "Air Bersih",
-      type: "Minuman",
-      quantity: 1000,
-      unit: "Liter",
-      disasterId: "9",
-      donor: "PDAM",
-      status: "Distributed",
-      notes: "Sudah didistribusikan",
-    },
-    {
-      id: "10",
-      name: "Obat-obatan",
-      type: "Kesehatan",
-      quantity: 25,
-      unit: "Paket",
-      disasterId: "10",
-      donor: "Klinik Sehat",
-      status: "Pending",
-      notes: "Dalam proses pengiriman",
-    },
-    {
-      id: "11",
-      name: "Selimut",
-      type: "Pakaian",
-      quantity: 75,
-      unit: "Buah",
-      disasterId: "11",
-      donor: "PT Tekstil",
-      status: "Received",
-      notes: "Sudah diterima di posko",
-    },
-    {
-      id: "12",
-      name: "Makanan Pokok",
-      type: "Makanan",
-      quantity: 150,
-      unit: "Paket",
-      disasterId: "12",
-      donor: "PT Sumber Pangan",
-      status: "Distributed",
-      notes: "Sudah didistribusikan",
-    },
-    {
-      id: "13",
-      name: "Tenda Pengungsian",
-      type: "Shelter",
-      quantity: 5,
-      unit: "Unit",
-      disasterId: "13",
-      donor: "Badan Nasional Penanggulangan Bencana",
-      status: "Pending",
-      notes: "Akan dikirim dalam 3 hari",
-    },
-    {
-      id: "14",
-      name: "Air Mineral",
-      type: "Minuman",
-      quantity: 150,
-      unit: "Kardus",
-      disasterId: "14",
-      donor: "PT Tirta",
-      status: "Received",
-      notes: "Sudah diterima di posko",
-    },
-    {
-      id: "15",
-      name: "Pakaian Layak Pakai",
-      type: "Pakaian",
-      quantity: 100,
-      unit: "Paket",
-      disasterId: "15",
-      donor: "Komunitas Peduli",
-      status: "Distributed",
-      notes: "Sudah didistribusikan",
-    },
-    {
-      id: "16",
-      name: "Obat-obatan",
-      type: "Kesehatan",
-      quantity: 20,
-      unit: "Paket",
-      disasterId: "16",
-      donor: "RS Sejahtera",
-      status: "Pending",
-      notes: "Dalam proses pengiriman",
-    },
-    {
-      id: "17",
-      name: "Alat Masak",
-      type: "Perlengkapan",
-      quantity: 15,
-      unit: "Set",
-      disasterId: "17",
-      donor: "Yayasan Bantuan",
-      status: "Received",
-      notes: "Sudah diterima di posko",
-    },
-    {
-      id: "18",
-      name: "Makanan Instan",
-      type: "Makanan",
-      quantity: 200,
-      unit: "Paket",
-      disasterId: "18",
-      donor: "PT Indofood",
-      status: "Distributed",
-      notes: "Sudah didistribusikan",
-    },
-    {
-      id: "19",
-      name: "Air Bersih",
-      type: "Minuman",
-      quantity: 800,
-      unit: "Liter",
-      disasterId: "19",
-      donor: "PDAM",
-      status: "Pending",
-      notes: "Akan dikirim besok",
-    },
-    {
-      id: "20",
-      name: "Selimut",
-      type: "Pakaian",
-      quantity: 60,
-      unit: "Buah",
-      disasterId: "20",
-      donor: "PT Tekstil",
-      status: "Received",
-      notes: "Sudah diterima di posko",
-    },
-  ]);
+  const [donations, setDonations] = useState<Donasi[]>([]);
+  const [disasters, setDisasters] = useState<Bencana[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<Aid>>({});
+  const [formData, setFormData] = useState<Partial<DonasiInput>>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string>("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [donationToDelete, setDonationToDelete] = useState<Donasi | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState<Donasi | null>(null);
   const itemsPerPage = 5;
 
+  useEffect(() => {
+    fetchDonations();
+    fetchDisasters();
+  }, []);
+
+  const fetchDonations = async () => {
+    try {
+      const data = await donasiApi.getAll();
+      setDonations(data);
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+      toast.error("Gagal mengambil data donasi");
+    }
+  };
+
+  const fetchDisasters = async () => {
+    try {
+      const data = await bencanaApi.getAll();
+      setDisasters(data);
+    } catch (error) {
+      console.error("Error fetching disasters:", error);
+      toast.error("Gagal mengambil data bencana");
+    }
+  };
+
   // Calculate pagination
-  const totalPages = Math.ceil(aids.length / itemsPerPage);
+  const totalPages = Math.ceil(donations.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentAids = aids.slice(startIndex, endIndex);
+  const currentDonations = donations.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newAid: Aid = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: formData.name || "",
-      type: formData.type || "",
-      quantity: Number(formData.quantity) || 0,
-      unit: formData.unit || "",
-      disasterId: formData.disasterId || "",
-      donor: formData.donor || "",
-      status: formData.status || "Pending",
-      notes: formData.notes || "",
-    };
-    setAids([...aids, newAid]);
-    setIsDialogOpen(false);
+  const resetForm = () => {
     setFormData({});
+    setIsEditing(false);
+    setEditingId("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (
+        !formData.nama_donatur ||
+        !formData.nominal ||
+        !formData.metode_pembayaran ||
+        !formData.tanggal_donasi ||
+        !formData.id_bencana
+      ) {
+        toast.error("Mohon lengkapi semua field yang diperlukan");
+        return;
+      }
+
+      // Format the date to ISO string with timezone
+      const formattedDate = new Date(formData.tanggal_donasi).toISOString();
+
+      const donationData: DonasiInput = {
+        nama_donatur: formData.nama_donatur,
+        nominal: Number(formData.nominal),
+        metode_pembayaran: formData.metode_pembayaran,
+        tanggal_donasi: formattedDate,
+        id_bencana: formData.id_bencana,
+      };
+
+      if (isEditing) {
+        await donasiApi.update(editingId, donationData);
+        toast.success("Data donasi berhasil diperbarui");
+      } else {
+        await donasiApi.create(donationData);
+        toast.success("Data donasi berhasil ditambahkan");
+      }
+
+      await fetchDonations();
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error: any) {
+      console.error("Error saving donation:", error);
+      const errorMessage =
+        error.response?.data?.message || "Gagal menyimpan data donasi";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleEdit = (donation: Donasi) => {
+    setFormData({
+      nama_donatur: donation.nama_donatur,
+      nominal: donation.nominal,
+      metode_pembayaran: donation.metode_pembayaran,
+      tanggal_donasi: donation.tanggal_donasi.split("T")[0],
+      id_bencana: donation.id_bencana,
+    });
+    setIsEditing(true);
+    setEditingId(donation.id);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (donation: Donasi) => {
+    setDonationToDelete(donation);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!donationToDelete) return;
+
+    try {
+      await donasiApi.delete(donationToDelete.id);
+      await fetchDonations();
+      toast.success("Data donasi berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setDonationToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting donation:", error);
+      const errorMessage =
+        error.response?.data?.message || "Gagal menghapus data donasi";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleDetail = (donation: Donasi) => {
+    setSelectedDonation(donation);
+    setDetailDialogOpen(true);
   };
 
   return (
@@ -304,17 +194,20 @@ const AidManagement = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-slate-800 mb-1">
-                Kelola Data Bantuan
+                Kelola Data Donasi
               </h1>
               <p className="text-slate-500">
-                Pantau dan kelola seluruh data bantuan dan distribusi
+                Pantau dan kelola seluruh data donasi yang tercatat di sistem
               </p>
             </div>
             <Button
-              onClick={() => setIsDialogOpen(true)}
+              onClick={() => {
+                resetForm();
+                setIsDialogOpen(true);
+              }}
               className="h-12 px-6 text-base font-semibold"
             >
-              Tambah Bantuan
+              Tambah Donasi
             </Button>
           </div>
 
@@ -328,28 +221,19 @@ const AidManagement = () => {
                       No
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Nama Bantuan
+                      Nama Donatur
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Jenis
+                      Nominal
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Jumlah
+                      Metode Pembayaran
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Satuan
+                      Tanggal Donasi
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      ID Bencana
-                    </TableHead>
-                    <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Donatur
-                    </TableHead>
-                    <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Status
-                    </TableHead>
-                    <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Catatan
+                      Bencana
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
                       Aksi
@@ -357,41 +241,54 @@ const AidManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentAids.map((aid, index) => (
-                    <TableRow key={aid.id}>
-                      <TableCell>
-                        {(currentPage - 1) * itemsPerPage + index + 1}
+                  {currentDonations.map((donation, index) => (
+                    <TableRow key={donation.id}>
+                      <TableCell className="text-slate-600">
+                        {startIndex + index + 1}
                       </TableCell>
-                      <TableCell>{aid.name}</TableCell>
-                      <TableCell>{aid.type}</TableCell>
-                      <TableCell>{aid.quantity}</TableCell>
-                      <TableCell>{aid.unit}</TableCell>
-                      <TableCell>{aid.disasterId}</TableCell>
-                      <TableCell>{aid.donor}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`
-                            ${
-                              aid.status === "Pending"
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                : aid.status === "Received"
-                                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                : aid.status === "Distributed"
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400"
-                            } 
-                            border-none font-medium`}
-                        >
-                          {aid.status}
-                        </Badge>
+                      <TableCell className="text-slate-600">
+                        {donation.nama_donatur}
                       </TableCell>
-                      <TableCell>{aid.notes}</TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="text-slate-600">
+                        Rp {donation.nominal.toLocaleString("id-ID")}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {donation.metode_pembayaran}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {new Date(donation.tanggal_donasi).toLocaleDateString(
+                          "id-ID"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {
+                          disasters.find((d) => d.id === donation.id_bencana)
+                            ?.jenis_bencana
+                        }
+                      </TableCell>
+                      <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="destructive"
+                            className="bg-yellow-500 text-white hover:bg-yellow-600"
+                            size="sm"
+                            onClick={() => handleDetail(donation)}
+                          >
+                            Detail
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="bg-blue-500 text-white hover:bg-blue-600"
+                            size="sm"
+                            onClick={() => handleEdit(donation)}
+                          >
                             Edit
                           </Button>
-                          <Button variant="destructive" size="sm">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(donation)}
+                          >
                             Hapus
                           </Button>
                         </div>
@@ -401,144 +298,233 @@ const AidManagement = () => {
                 </TableBody>
               </Table>
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
 
-          {/* Dialog Tambah Bantuan */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Tambah Data Bantuan</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nama Bantuan</Label>
-                  <Input
-                    id="name"
-                    value={formData.name || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="type">Jenis Bantuan</Label>
-                  <select
-                    id="type"
-                    className="w-full p-2 border rounded-md"
-                    value={formData.type || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="">Pilih Jenis Bantuan</option>
-                    <option value="Makanan">Makanan</option>
-                    <option value="Pakaian">Pakaian</option>
-                    <option value="Obat-obatan">Obat-obatan</option>
-                    <option value="Tenda">Tenda</option>
-                    <option value="Uang">Uang</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="quantity">Jumlah</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      value={formData.quantity || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          quantity: Number(e.target.value),
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="unit">Satuan</Label>
-                    <Input
-                      id="unit"
-                      value={formData.unit || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, unit: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="disasterId">ID Bencana</Label>
-                  <Input
-                    id="disasterId"
-                    value={formData.disasterId || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, disasterId: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="donor">Donatur</Label>
-                  <Input
-                    id="donor"
-                    value={formData.donor || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, donor: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <select
-                    id="status"
-                    className="w-full p-2 border rounded-md"
-                    value={formData.status || "Pending"}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="Pending" className="text-amber-700">
-                      Pending
-                    </option>
-                    <option value="Received" className="text-blue-700">
-                      Received
-                    </option>
-                    <option value="Distributed" className="text-green-700">
-                      Distributed
-                    </option>
-                    <option value="Completed" className="text-slate-700">
-                      Completed
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="notes">Catatan</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, notes: e.target.value })
-                    }
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Simpan
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+            {/* Pagination */}
+            <div className="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </div>
         </main>
       </div>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditing ? "Edit Data Donasi" : "Tambah Data Donasi"}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditing
+                ? "Ubah informasi donasi yang ada di bawah ini"
+                : "Isi informasi donasi di bawah ini"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nama_donatur">Nama Donatur</Label>
+              <Input
+                id="nama_donatur"
+                value={formData.nama_donatur || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, nama_donatur: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nominal">Nominal</Label>
+              <Input
+                id="nominal"
+                type="number"
+                value={formData.nominal || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, nominal: Number(e.target.value) })
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="metode_pembayaran">Metode Pembayaran</Label>
+              <Select
+                value={formData.metode_pembayaran}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, metode_pembayaran: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Metode Pembayaran" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Transfer Bank">Transfer Bank</SelectItem>
+                  <SelectItem value="E-Wallet">E-Wallet</SelectItem>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tanggal_donasi">Tanggal Donasi</Label>
+              <Input
+                id="tanggal_donasi"
+                type="date"
+                value={formData.tanggal_donasi || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, tanggal_donasi: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="id_bencana">Bencana</Label>
+              <Select
+                value={formData.id_bencana}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, id_bencana: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Bencana" />
+                </SelectTrigger>
+                <SelectContent>
+                  {disasters.map((disaster) => (
+                    <SelectItem key={disaster.id} value={disaster.id}>
+                      {disaster.jenis_bencana} -{" "}
+                      {disaster.lokasi?.nama_kecamatan}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsDialogOpen(false);
+                  resetForm();
+                }}
+              >
+                Batal
+              </Button>
+              <Button type="submit">
+                {isEditing ? "Simpan Perubahan" : "Tambah Donasi"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex flex-col items-center justify-center py-4">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+            </div>
+            <DialogTitle className="text-center">Konfirmasi Hapus</DialogTitle>
+            <DialogDescription className="text-center">
+              Apakah kamu yakin menghapus data donasi dari{" "}
+              {donationToDelete?.nama_donatur}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center gap-2">
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setDonationToDelete(null);
+                }}
+              >
+                Batal
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Ya, Hapus
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">
+              Detail Donasi
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedDonation && (
+            <div className="space-y-6 py-4">
+              {/* Main Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-500">Nama Donatur</Label>
+                  <p className="font-medium">{selectedDonation.nama_donatur}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-500">Nominal</Label>
+                  <p className="font-medium">
+                    Rp {selectedDonation.nominal.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-500">Metode Pembayaran</Label>
+                  <p className="font-medium">
+                    {selectedDonation.metode_pembayaran}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-500">Tanggal Donasi</Label>
+                  <p className="font-medium">
+                    {new Date(
+                      selectedDonation.tanggal_donasi
+                    ).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Disaster Info */}
+              <div className="space-y-2">
+                <Label className="text-slate-500">Bencana</Label>
+                <p className="font-medium">
+                  {
+                    disasters.find((d) => d.id === selectedDonation.id_bencana)
+                      ?.jenis_bencana
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="sticky -bottom-6 bg-white py-4">
+            <Button
+              variant="destructive"
+              className="bg-blue-500 text-white hover:bg-blue-600 w-full"
+              onClick={() => setDetailDialogOpen(false)}
+            >
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

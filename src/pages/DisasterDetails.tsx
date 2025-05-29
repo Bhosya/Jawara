@@ -37,7 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import L from "leaflet";
-import { getBencanaById } from "@/lib/api";
+import { bencanaApi } from "@/services/api";
 import type { Bencana } from "@/lib/types";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -104,7 +104,7 @@ const DisasterDetails = () => {
     const fetchData = async () => {
       try {
         if (id) {
-          const data = await getBencanaById(id);
+          const data = await bencanaApi.getById(id);
           setDisasterData(data);
         }
       } catch (error) {

@@ -1,86 +1,149 @@
-import { NavLink, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { User } from "@/types/auth";
+import { authApi } from "@/services/api";
 import {
-  Home,
-  Activity,
-  Users,
-  Box,
-  Heart,
-  ClipboardList,
-  LogOut,
+  LayoutDashboard,
   AlertTriangle,
+  Users,
+  Package,
+  Heart,
+  UserPlus,
+  Settings,
+  LogOut,
+  UserCog,
+  UserCheck,
 } from "lucide-react";
-// Jika ada file logo, import di sini, contoh:
-// import JawaraLogo from "@/assets/jawara-logo.svg";
-
-const menu = [
-  { label: "Dashboard", icon: <Home size={20} />, to: "/admin", end: true },
-  {
-    label: "Data Bencana",
-    icon: <Activity size={20} />,
-    to: "/admin/disaster-management",
-  },
-  {
-    label: "Data Korban",
-    icon: <Users size={20} />,
-    to: "/admin/victim-management",
-  },
-  {
-    label: "Data Bantuan",
-    icon: <Box size={20} />,
-    to: "/admin/aid-management",
-  },
-  {
-    label: "Data Relawan",
-    icon: <Heart size={20} />,
-    to: "/admin/volunteer-management",
-  },
-  {
-    label: "Kebutuhan Operasional",
-    icon: <ClipboardList size={20} />,
-    to: "/admin/operational-needs",
-  },
-];
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 const AdminSidebar = () => {
+  const location = useLocation();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await authApi.getUserInfo();
+        setUser(userData);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 flex items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
+
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  const menuItems = [
+    {
+      title: "Dashboard",
+      icon: <LayoutDashboard className="w-5 h-5" />,
+      path: "/admin",
+    },
+    {
+      title: "Kelola Bencana",
+      icon: <AlertTriangle className="w-5 h-5" />,
+      path: "/admin/disaster-management",
+    },
+    {
+      title: "Kelola Korban",
+      icon: <Users className="w-5 h-5" />,
+      path: "/admin/victim-management",
+    },
+    {
+      title: "Kelola Bantuan",
+      icon: <Package className="w-5 h-5" />,
+      path: "/admin/aid-management",
+    },
+    {
+      title: "Kelola Relawan",
+      icon: <Heart className="w-5 h-5" />,
+      path: "/admin/volunteer-management",
+    },
+    {
+      title: "Kebutuhan Operasional",
+      icon: <Settings className="w-5 h-5" />,
+      path: "/admin/operational-needs",
+    },
+    // Menu khusus SUPER_ADMIN
+    ...(isSuperAdmin
+      ? [
+          {
+            title: "Kelola Pengguna",
+            icon: <UserCog className="w-5 h-5" />,
+            path: "/admin/user-management",
+          },
+          {
+            title: "Persetujuan Pengguna",
+            icon: <UserCheck className="w-5 h-5" />,
+            path: "/admin/user-approval",
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <aside className="h-screen w-64 bg-white border-r border-slate-200 shadow-md flex flex-col justify-between fixed z-30">
-      <div>
-        <div className="flex items-center gap-2 px-8 py-8 border-b border-slate-100">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <AlertTriangle className="w-6 h-6 text-jawara-red group-hover:animate-pulse-soft transition-all" />
-            <span className="text-xl font-medium tracking-tight text-slate-800 transition-all group-hover:text-jawara-blue">
-              JAWARA
-            </span>
-          </Link>
+    <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200">
+      <div className="flex flex-col h-full">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-slate-800">Jawara</h1>
+          <p className="text-sm text-slate-500">Admin Panel</p>
         </div>
-        <nav className="mt-6 flex flex-col gap-1 px-2">
-          {menu.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              {...(item.end ? { end: true } : {})}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-8 py-3 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`
-              }
+
+        <nav className="flex-1 px-4 space-y-1">
+          {menuItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                location.pathname === item.path
+                  ? "bg-slate-100 text-slate-900"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
             >
-              <span>{item.icon}</span>
-              {item.label}
-            </NavLink>
+              {item.icon}
+              <span className="ml-3">{item.title}</span>
+            </Link>
           ))}
         </nav>
+
+        <div className="p-4 border-t border-slate-200">
+          <div className="flex items-center px-4 py-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-900 truncate">
+                {user?.name}
+              </p>
+              <p className="text-sm text-slate-500 truncate">{user?.email}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              window.location.href = "/login";
+            }}
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            Logout
+          </Button>
+        </div>
       </div>
-      <div className="mb-8 px-8">
-        <button className="flex items-center gap-3 w-full px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 font-medium">
-          <LogOut size={20} />
-          Logout
-        </button>
-      </div>
-    </aside>
+    </div>
   );
 };
 

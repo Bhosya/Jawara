@@ -50,8 +50,8 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import GalleryModal from "@/components/GalleryModal";
 import "@/styles/animations.css";
-import { getAllBencana } from "@/lib/api";
-import type { Bencana } from "@/lib/types";
+import { bencanaApi } from "@/services/api";
+import type { Bencana, Kebutuhan } from "@/types/models";
 
 // Custom styles for the map tooltip
 const customTooltipStyle = `
@@ -582,7 +582,7 @@ const galleryImages = [
   },
 ];
 
-const getKebutuhanLabels = (kebutuhan: any) => {
+const getKebutuhanLabels = (kebutuhan: Kebutuhan) => {
   const getLevelAndColor = (value: number, max: number) => {
     const percentage = (value / max) * 100;
     if (percentage <= 50) return { level: "Urgent", color: "bg-red-500" };
@@ -691,25 +691,25 @@ const Index = () => {
   const cardsPerPage = 3;
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchBencana = async () => {
-      try {
-        const data = await getAllBencana();
-        // Filter data dengan status AKTIF dan urutkan berdasarkan tanggal terbaru
-        const filteredData = data
-          .filter((bencana) => bencana.status.toUpperCase() === "AKTIF")
-          .sort(
-            (a, b) =>
-              new Date(b.tanggal_bencana).getTime() -
-              new Date(a.tanggal_bencana).getTime()
-          )
-          .slice(0, 10); // Ambil 10 data teratas
-        setBencanaData(filteredData);
-      } catch (error) {
-        console.error("Error fetching bencana data:", error);
-      }
-    };
+  const fetchBencana = async () => {
+    try {
+      const data = await bencanaApi.getAll();
+      // Filter data dengan status AKTIF dan urutkan berdasarkan tanggal terbaru
+      const filteredData = data
+        .filter((bencana) => bencana.status.toUpperCase() === "AKTIF")
+        .sort(
+          (a, b) =>
+            new Date(b.tanggal_bencana).getTime() -
+            new Date(a.tanggal_bencana).getTime()
+        )
+        .slice(0, 10); // Ambil 10 data teratas
+      setBencanaData(filteredData);
+    } catch (error) {
+      console.error("Error fetching bencana data:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchBencana();
   }, []);
 
@@ -728,7 +728,6 @@ const Index = () => {
   }, [bencanaData.length]);
 
   const getAlertLevel = (tingkat_peringatan: string) => {
-    console.log("Tingkat Peringatan:", tingkat_peringatan); // Debug log
     switch (tingkat_peringatan?.toLowerCase()) {
       case "berat":
         return "Tinggi";
@@ -800,6 +799,24 @@ const Index = () => {
               text-white border-none`}
             >
               {bencana.status}
+            </Badge>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-slate-600 dark:text-slate-400">
+              Tingkat Peringatan:
+            </span>
+            <Badge
+              className={`
+              ${
+                bencana.tingkat_peringatan === "TINGGI"
+                  ? "bg-red-500"
+                  : bencana.tingkat_peringatan === "SEDANG"
+                  ? "bg-amber-500"
+                  : "bg-orange-500"
+              } 
+              text-white border-none`}
+            >
+              {bencana.tingkat_peringatan}
             </Badge>
           </div>
         </div>

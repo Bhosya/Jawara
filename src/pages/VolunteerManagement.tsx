@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import {
   Table,
@@ -14,110 +14,63 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Pagination from "@/components/Pagination";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
+import { relawanApi, bencanaApi } from "@/services/api";
+import { Relawan, Bencana } from "@/types/models";
+import { toast } from "sonner";
 
-interface Volunteer {
-  id: string;
-  name: string;
-  contact: string;
-  skill: string;
-  status: string;
-  notes: string;
-}
+type RelawanInput = {
+  nama: string;
+  jenis_relawan: string;
+  nomor_hp: string;
+  email: string;
+  id_bencana: string;
+};
 
 const VolunteerManagement = () => {
-  const [volunteers, setVolunteers] = useState<Volunteer[]>([
-    {
-      id: "1",
-      name: "Andi Wijaya",
-      contact: "081234567890",
-      skill: "Medis",
-      status: "Aktif",
-      notes: "Siap tugas lapangan",
-    },
-    {
-      id: "2",
-      name: "Budi Santoso",
-      contact: "081234567891",
-      skill: "Logistik",
-      status: "Aktif",
-      notes: "Koordinator logistik",
-    },
-    {
-      id: "3",
-      name: "Citra Dewi",
-      contact: "081234567892",
-      skill: "Psikososial",
-      status: "Nonaktif",
-      notes: "Cuti",
-    },
-    {
-      id: "4",
-      name: "Dewi Lestari",
-      contact: "081234567893",
-      skill: "Medis",
-      status: "Aktif",
-      notes: "",
-    },
-    {
-      id: "5",
-      name: "Eko Prasetyo",
-      contact: "081234567894",
-      skill: "Evakuasi",
-      status: "Aktif",
-      notes: "",
-    },
-    {
-      id: "6",
-      name: "Fajar Nugroho",
-      contact: "081234567895",
-      skill: "Logistik",
-      status: "Nonaktif",
-      notes: "",
-    },
-    {
-      id: "7",
-      name: "Gita Sari",
-      contact: "081234567896",
-      skill: "Medis",
-      status: "Aktif",
-      notes: "",
-    },
-    {
-      id: "8",
-      name: "Hadi Saputra",
-      contact: "081234567897",
-      skill: "Evakuasi",
-      status: "Aktif",
-      notes: "",
-    },
-    {
-      id: "9",
-      name: "Indah Permata",
-      contact: "081234567898",
-      skill: "Psikososial",
-      status: "Aktif",
-      notes: "",
-    },
-    {
-      id: "10",
-      name: "Joko Susilo",
-      contact: "081234567899",
-      skill: "Medis",
-      status: "Nonaktif",
-      notes: "",
-    },
-  ]);
-
+  const [volunteers, setVolunteers] = useState<Relawan[]>([]);
+  const [disasters, setDisasters] = useState<Bencana[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<Volunteer>>({});
+  const [formData, setFormData] = useState<Partial<RelawanInput>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [volunteerToDelete, setVolunteerToDelete] = useState<Relawan | null>(
+    null
+  );
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    fetchVolunteers();
+    fetchDisasters();
+  }, []);
+
+  const fetchVolunteers = async () => {
+    try {
+      const data = await relawanApi.getAll();
+      setVolunteers(data);
+    } catch (error) {
+      console.error("Error fetching volunteers:", error);
+      toast.error("Gagal mengambil data relawan");
+    }
+  };
+
+  const fetchDisasters = async () => {
+    try {
+      const data = await bencanaApi.getAll();
+      setDisasters(data);
+    } catch (error) {
+      console.error("Error fetching disasters:", error);
+      toast.error("Gagal mengambil data bencana");
+    }
+  };
 
   // Calculate pagination
   const totalPages = Math.ceil(volunteers.length / itemsPerPage);
@@ -129,50 +82,79 @@ const VolunteerManagement = () => {
     setCurrentPage(page);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-      // Update existing volunteer
-      setVolunteers(
-        volunteers.map((vol) =>
-          vol.id === editingId
-            ? {
-                ...vol,
-                name: formData.name || "",
-                contact: formData.contact || "",
-                skill: formData.skill || "",
-                status: formData.status || "Aktif",
-                notes: formData.notes || "",
-              }
-            : vol
-        )
-      );
-    } else {
-      // Add new volunteer
-      const newVolunteer: Volunteer = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: formData.name || "",
-        contact: formData.contact || "",
-        skill: formData.skill || "",
-        status: formData.status || "Aktif",
-        notes: formData.notes || "",
+    try {
+      if (
+        !formData.nama ||
+        !formData.jenis_relawan ||
+        !formData.nomor_hp ||
+        !formData.email ||
+        !formData.id_bencana
+      ) {
+        toast.error("Mohon lengkapi semua field yang diperlukan");
+        return;
+      }
+
+      const volunteerData: RelawanInput = {
+        nama: formData.nama,
+        jenis_relawan: formData.jenis_relawan,
+        nomor_hp: formData.nomor_hp,
+        email: formData.email,
+        id_bencana: formData.id_bencana,
       };
-      setVolunteers([...volunteers, newVolunteer]);
+
+      if (editingId) {
+        await relawanApi.update(editingId, volunteerData);
+        toast.success("Data relawan berhasil diperbarui");
+      } else {
+        await relawanApi.create(volunteerData);
+        toast.success("Data relawan berhasil ditambahkan");
+      }
+
+      await fetchVolunteers();
+      setIsDialogOpen(false);
+      setFormData({});
+      setEditingId(null);
+    } catch (error: any) {
+      console.error("Error saving volunteer:", error);
+      const errorMessage =
+        error.response?.data?.message || "Gagal menyimpan data relawan";
+      toast.error(errorMessage);
     }
-    setIsDialogOpen(false);
-    setFormData({});
-    setEditingId(null);
   };
 
-  const handleEdit = (volunteer: Volunteer) => {
-    setFormData(volunteer);
+  const handleEdit = (volunteer: Relawan) => {
+    setFormData({
+      nama: volunteer.nama,
+      jenis_relawan: volunteer.jenis_relawan,
+      nomor_hp: volunteer.nomor_hp,
+      email: volunteer.email,
+      id_bencana: volunteer.id_bencana,
+    });
     setEditingId(volunteer.id);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus relawan ini?")) {
-      setVolunteers(volunteers.filter((vol) => vol.id !== id));
+  const handleDelete = (volunteer: Relawan) => {
+    setVolunteerToDelete(volunteer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!volunteerToDelete) return;
+
+    try {
+      await relawanApi.delete(volunteerToDelete.id);
+      await fetchVolunteers();
+      toast.success("Data relawan berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setVolunteerToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting volunteer:", error);
+      const errorMessage =
+        error.response?.data?.message || "Gagal menghapus data relawan";
+      toast.error(errorMessage);
     }
   };
 
@@ -216,13 +198,13 @@ const VolunteerManagement = () => {
                       Kontak
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
+                      Email
+                    </TableHead>
+                    <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
                       Keahlian
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Status
-                    </TableHead>
-                    <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Catatan
+                      Bencana
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
                       Aksi
@@ -235,27 +217,21 @@ const VolunteerManagement = () => {
                       <TableCell>
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </TableCell>
-                      <TableCell>{vol.name}</TableCell>
-                      <TableCell>{vol.contact}</TableCell>
-                      <TableCell>{vol.skill}</TableCell>
+                      <TableCell>{vol.nama}</TableCell>
+                      <TableCell>{vol.nomor_hp}</TableCell>
+                      <TableCell>{vol.email}</TableCell>
+                      <TableCell>{vol.jenis_relawan}</TableCell>
                       <TableCell>
-                        <Badge
-                          className={`
-                            ${
-                              vol.status === "Aktif"
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400"
-                            } 
-                            border-none font-medium`}
-                        >
-                          {vol.status}
-                        </Badge>
+                        {
+                          disasters.find((d) => d.id === vol.id_bencana)
+                            ?.jenis_bencana
+                        }
                       </TableCell>
-                      <TableCell>{vol.notes}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
+                            variant="destructive"
+                            className="bg-blue-500 hover:bg-blue-600"
                             size="sm"
                             onClick={() => handleEdit(vol)}
                           >
@@ -264,7 +240,7 @@ const VolunteerManagement = () => {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(vol.id)}
+                            onClick={() => handleDelete(vol)}
                           >
                             Hapus
                           </Button>
@@ -290,35 +266,50 @@ const VolunteerManagement = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Nama</Label>
+                  <Label htmlFor="nama">Nama</Label>
                   <Input
-                    id="name"
-                    value={formData.name || ""}
+                    id="nama"
+                    value={formData.nama || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, nama: e.target.value })
                     }
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="contact">Kontak</Label>
+                  <Label htmlFor="nomor_hp">Nomor HP</Label>
                   <Input
-                    id="contact"
-                    value={formData.contact || ""}
+                    id="nomor_hp"
+                    value={formData.nomor_hp || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, contact: e.target.value })
+                      setFormData({ ...formData, nomor_hp: e.target.value })
                     }
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="skill">Keahlian</Label>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="jenis_relawan">Keahlian</Label>
                   <select
-                    id="skill"
+                    id="jenis_relawan"
                     className="w-full p-2 border rounded-md"
-                    value={formData.skill || ""}
+                    value={formData.jenis_relawan || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, skill: e.target.value })
+                      setFormData({
+                        ...formData,
+                        jenis_relawan: e.target.value,
+                      })
                     }
                     required
                   >
@@ -331,38 +322,64 @@ const VolunteerManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="id_bencana">Bencana</Label>
                   <select
-                    id="status"
+                    id="id_bencana"
                     className="w-full p-2 border rounded-md"
-                    value={formData.status || "Aktif"}
+                    value={formData.id_bencana || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
+                      setFormData({ ...formData, id_bencana: e.target.value })
                     }
                     required
                   >
-                    <option value="Aktif" className="text-green-700">
-                      Aktif
-                    </option>
-                    <option value="Nonaktif" className="text-slate-700">
-                      Nonaktif
-                    </option>
+                    <option value="">Pilih Bencana</option>
+                    {disasters.map((disaster) => (
+                      <option key={disaster.id} value={disaster.id}>
+                        {disaster.jenis_bencana} -{" "}
+                        {disaster.lokasi?.nama_kecamatan}
+                      </option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <Label htmlFor="notes">Catatan</Label>
-                  <Input
-                    id="notes"
-                    value={formData.notes || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, notes: e.target.value })
-                    }
-                  />
                 </div>
                 <Button type="submit" className="w-full">
                   {editingId ? "Update" : "Simpan"}
                 </Button>
               </form>
+            </DialogContent>
+          </Dialog>
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <div className="flex flex-col items-center justify-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                    <Trash2 className="w-8 h-8 text-red-500" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center">
+                  Konfirmasi Hapus
+                </DialogTitle>
+                <DialogDescription className="text-center">
+                  Apakah kamu yakin menghapus data relawan{" "}
+                  {volunteerToDelete?.nama}?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center gap-2">
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDeleteDialogOpen(false);
+                      setVolunteerToDelete(null);
+                    }}
+                  >
+                    Batal
+                  </Button>
+                  <Button variant="destructive" onClick={confirmDelete}>
+                    Ya, Hapus
+                  </Button>
+                </DialogFooter>
+              </div>
             </DialogContent>
           </Dialog>
         </main>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import {
   Table,
@@ -14,139 +14,154 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Pagination from "@/components/Pagination";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
+import { kebutuhanApi, bencanaApi } from "@/services/api";
+import { Kebutuhan, Bencana } from "@/types/models";
+import { toast } from "sonner";
 
-interface OperationalNeed {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  status: string;
-  notes: string;
-}
+type KebutuhanInput = {
+  id_bencana: string;
+  jumlah_makanan: number;
+  jumlah_max_makanan: number;
+  jumlah_obat: number;
+  jumlah_max_obat: number;
+  jumlah_pakaian: number;
+  jumlah_max_pakaian: number;
+  jumlah_airbersih: number;
+  jumlah_max_airbersih: number;
+};
 
 const OperationalNeedsManagement = () => {
-  const [needs, setNeeds] = useState<OperationalNeed[]>([
-    {
-      id: "1",
-      name: "Tenda Darurat",
-      category: "Perlengkapan",
-      quantity: 10,
-      unit: "unit",
-      status: "Urgent",
-      notes: "Untuk pengungsi baru",
-    },
-    {
-      id: "2",
-      name: "Masker",
-      category: "Kesehatan",
-      quantity: 500,
-      unit: "pcs",
-      status: "High",
-      notes: "Distribusi harian",
-    },
-    {
-      id: "3",
-      name: "Air Bersih",
-      category: "Logistik",
-      quantity: 2000,
-      unit: "liter",
-      status: "Medium",
-      notes: "Cadangan",
-    },
-    {
-      id: "4",
-      name: "Obat-obatan",
-      category: "Kesehatan",
-      quantity: 100,
-      unit: "paket",
-      status: "Urgent",
-      notes: "Stok menipis",
-    },
-    {
-      id: "5",
-      name: "Selimut",
-      category: "Perlengkapan",
-      quantity: 150,
-      unit: "pcs",
-      status: "Medium",
-      notes: "",
-    },
-    {
-      id: "6",
-      name: "Beras",
-      category: "Logistik",
-      quantity: 500,
-      unit: "kg",
-      status: "High",
-      notes: "",
-    },
-    {
-      id: "7",
-      name: "Mie Instan",
-      category: "Logistik",
-      quantity: 1000,
-      unit: "pcs",
-      status: "Medium",
-      notes: "",
-    },
-    {
-      id: "8",
-      name: "Susu Bubuk",
-      category: "Logistik",
-      quantity: 200,
-      unit: "paket",
-      status: "High",
-      notes: "",
-    },
-    {
-      id: "9",
-      name: "Hand Sanitizer",
-      category: "Kesehatan",
-      quantity: 100,
-      unit: "botol",
-      status: "Urgent",
-      notes: "",
-    },
-    {
-      id: "10",
-      name: "Lampu Emergency",
-      category: "Perlengkapan",
-      quantity: 20,
-      unit: "unit",
-      status: "Medium",
-      notes: "",
-    },
-  ]);
+  const [needs, setNeeds] = useState<Kebutuhan[]>([]);
+  const [disasters, setDisasters] = useState<Bencana[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<OperationalNeed>>({});
+  const [formData, setFormData] = useState<Partial<KebutuhanInput>>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [needToDelete, setNeedToDelete] = useState<Kebutuhan | null>(null);
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    fetchNeeds();
+    fetchDisasters();
+  }, []);
+
+  const fetchNeeds = async () => {
+    try {
+      const data = await kebutuhanApi.getAll();
+      setNeeds(data);
+    } catch (error) {
+      console.error("Error fetching needs:", error);
+      toast.error("Gagal mengambil data kebutuhan");
+    }
+  };
+
+  const fetchDisasters = async () => {
+    try {
+      const data = await bencanaApi.getAll();
+      setDisasters(data);
+    } catch (error) {
+      console.error("Error fetching disasters:", error);
+      toast.error("Gagal mengambil data bencana");
+    }
+  };
+
+  // Calculate pagination
   const totalPages = Math.ceil(needs.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentNeeds = needs.slice(startIndex, endIndex);
-  const handlePageChange = (page: number) => setCurrentPage(page);
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newNeed: OperationalNeed = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: formData.name || "",
-      category: formData.category || "",
-      quantity: Number(formData.quantity) || 0,
-      unit: formData.unit || "",
-      status: formData.status || "Medium",
-      notes: formData.notes || "",
-    };
-    setNeeds([...needs, newNeed]);
-    setIsDialogOpen(false);
-    setFormData({});
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
+
+  const handleEdit = (need: Kebutuhan) => {
+    setFormData({
+      id_bencana: need.id_bencana,
+      jumlah_makanan: need.jumlah_makanan,
+      jumlah_max_makanan: need.jumlah_max_makanan,
+      jumlah_obat: need.jumlah_obat,
+      jumlah_max_obat: need.jumlah_max_obat,
+      jumlah_pakaian: need.jumlah_pakaian,
+      jumlah_max_pakaian: need.jumlah_max_pakaian,
+      jumlah_airbersih: need.jumlah_airbersih,
+      jumlah_max_airbersih: need.jumlah_max_airbersih,
+    });
+    setEditingId(need.id);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!formData.id_bencana) {
+        toast.error("Mohon pilih bencana");
+        return;
+      }
+
+      const needData: KebutuhanInput = {
+        id_bencana: formData.id_bencana,
+        jumlah_makanan: Number(formData.jumlah_makanan) || 0,
+        jumlah_max_makanan: Number(formData.jumlah_max_makanan) || 0,
+        jumlah_obat: Number(formData.jumlah_obat) || 0,
+        jumlah_max_obat: Number(formData.jumlah_max_obat) || 0,
+        jumlah_pakaian: Number(formData.jumlah_pakaian) || 0,
+        jumlah_max_pakaian: Number(formData.jumlah_max_pakaian) || 0,
+        jumlah_airbersih: Number(formData.jumlah_airbersih) || 0,
+        jumlah_max_airbersih: Number(formData.jumlah_max_airbersih) || 0,
+      };
+
+      if (editingId) {
+        await kebutuhanApi.update(editingId, needData);
+        toast.success("Data kebutuhan berhasil diperbarui");
+      } else {
+        await kebutuhanApi.create(needData);
+        toast.success("Data kebutuhan berhasil ditambahkan");
+      }
+
+      await fetchNeeds();
+      setIsDialogOpen(false);
+      setFormData({});
+      setEditingId(null);
+    } catch (error: any) {
+      console.error("Error saving need:", error);
+      const errorMessage =
+        error.response?.data?.message || "Gagal menyimpan data kebutuhan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleDelete = (need: Kebutuhan) => {
+    setNeedToDelete(need);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!needToDelete) return;
+
+    try {
+      await kebutuhanApi.delete(needToDelete.id);
+      await fetchNeeds();
+      toast.success("Data kebutuhan berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setNeedToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting need:", error);
+      const errorMessage =
+        error.response?.data?.message || "Gagal menghapus data kebutuhan";
+      toast.error(errorMessage);
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-[#f8fafc] to-[#e0e7ef] font-sans">
       <AdminSidebar />
@@ -163,7 +178,11 @@ const OperationalNeedsManagement = () => {
               </p>
             </div>
             <Button
-              onClick={() => setIsDialogOpen(true)}
+              onClick={() => {
+                setFormData({});
+                setEditingId(null);
+                setIsDialogOpen(true);
+              }}
               className="h-12 px-6 text-base font-semibold"
             >
               Tambah Kebutuhan
@@ -178,22 +197,22 @@ const OperationalNeedsManagement = () => {
                       No
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Nama Kebutuhan
+                      Bencana
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Kategori
+                      Lokasi
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Jumlah
+                      Makanan
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Satuan
+                      Obat-obatan
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Status
+                      Pakaian
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
-                      Catatan
+                      Air Bersih
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold uppercase tracking-wide">
                       Aksi
@@ -206,32 +225,45 @@ const OperationalNeedsManagement = () => {
                       <TableCell>
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </TableCell>
-                      <TableCell>{need.name}</TableCell>
-                      <TableCell>{need.category}</TableCell>
-                      <TableCell>{need.quantity}</TableCell>
-                      <TableCell>{need.unit}</TableCell>
                       <TableCell>
-                        <Badge
-                          className={`
-                            ${
-                              need.status === "Urgent"
-                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                : need.status === "High"
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                            } 
-                            border-none font-medium`}
-                        >
-                          {need.status}
-                        </Badge>
+                        {
+                          disasters.find((d) => d.id === need.id_bencana)
+                            ?.jenis_bencana
+                        }
                       </TableCell>
-                      <TableCell>{need.notes}</TableCell>
+                      <TableCell>
+                        {
+                          disasters.find((d) => d.id === need.id_bencana)
+                            ?.lokasi?.nama_kecamatan
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {need.jumlah_makanan} / {need.jumlah_max_makanan}
+                      </TableCell>
+                      <TableCell>
+                        {need.jumlah_obat} / {need.jumlah_max_obat}
+                      </TableCell>
+                      <TableCell>
+                        {need.jumlah_pakaian} / {need.jumlah_max_pakaian}
+                      </TableCell>
+                      <TableCell>
+                        {need.jumlah_airbersih} / {need.jumlah_max_airbersih}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="destructive"
+                            className="bg-blue-500 hover:bg-blue-600"
+                            size="sm"
+                            onClick={() => handleEdit(need)}
+                          >
                             Edit
                           </Button>
-                          <Button variant="destructive" size="sm">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(need)}
+                          >
                             Hapus
                           </Button>
                         </div>
@@ -250,95 +282,210 @@ const OperationalNeedsManagement = () => {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Tambah Kebutuhan Operasional</DialogTitle>
+                <DialogTitle>
+                  {editingId
+                    ? "Edit Kebutuhan Operasional"
+                    : "Tambah Kebutuhan Operasional"}
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Nama Kebutuhan</Label>
-                  <Input
-                    id="name"
-                    value={formData.name || ""}
+                  <Label htmlFor="id_bencana">Bencana</Label>
+                  <select
+                    id="id_bencana"
+                    className="w-full p-2 border rounded-md"
+                    value={formData.id_bencana || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, id_bencana: e.target.value })
                     }
                     required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Kategori</Label>
-                  <Input
-                    id="category"
-                    value={formData.category || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                    required
-                  />
+                    disabled={!!editingId}
+                  >
+                    <option value="">Pilih Bencana</option>
+                    {disasters.map((disaster) => (
+                      <option key={disaster.id} value={disaster.id}>
+                        {disaster.jenis_bencana} -{" "}
+                        {disaster.lokasi?.nama_kecamatan}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="quantity">Jumlah</Label>
+                    <Label htmlFor="jumlah_makanan">Jumlah Makanan</Label>
                     <Input
-                      id="quantity"
+                      id="jumlah_makanan"
                       type="number"
-                      value={formData.quantity || ""}
+                      value={formData.jumlah_makanan || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          quantity: Number(e.target.value),
+                          jumlah_makanan: Number(e.target.value),
                         })
                       }
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="unit">Satuan</Label>
+                    <Label htmlFor="jumlah_max_makanan">Maksimum Makanan</Label>
                     <Input
-                      id="unit"
-                      value={formData.unit || ""}
+                      id="jumlah_max_makanan"
+                      type="number"
+                      value={formData.jumlah_max_makanan || ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, unit: e.target.value })
+                        setFormData({
+                          ...formData,
+                          jumlah_max_makanan: Number(e.target.value),
+                        })
                       }
                       required
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <select
-                    id="status"
-                    className="w-full p-2 border rounded-md"
-                    value={formData.status || "Medium"}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="Urgent" className="text-red-700">
-                      Urgent
-                    </option>
-                    <option value="High" className="text-amber-700">
-                      High
-                    </option>
-                    <option value="Medium" className="text-blue-700">
-                      Medium
-                    </option>
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="jumlah_obat">Jumlah Obat-obatan</Label>
+                    <Input
+                      id="jumlah_obat"
+                      type="number"
+                      value={formData.jumlah_obat || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jumlah_obat: Number(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="jumlah_max_obat">
+                      Maksimum Obat-obatan
+                    </Label>
+                    <Input
+                      id="jumlah_max_obat"
+                      type="number"
+                      value={formData.jumlah_max_obat || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jumlah_max_obat: Number(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="notes">Catatan</Label>
-                  <Input
-                    id="notes"
-                    value={formData.notes || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, notes: e.target.value })
-                    }
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="jumlah_pakaian">Jumlah Pakaian</Label>
+                    <Input
+                      id="jumlah_pakaian"
+                      type="number"
+                      value={formData.jumlah_pakaian || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jumlah_pakaian: Number(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="jumlah_max_pakaian">Maksimum Pakaian</Label>
+                    <Input
+                      id="jumlah_max_pakaian"
+                      type="number"
+                      value={formData.jumlah_max_pakaian || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jumlah_max_pakaian: Number(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="jumlah_airbersih">Jumlah Air Bersih</Label>
+                    <Input
+                      id="jumlah_airbersih"
+                      type="number"
+                      value={formData.jumlah_airbersih || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jumlah_airbersih: Number(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="jumlah_max_airbersih">
+                      Maksimum Air Bersih
+                    </Label>
+                    <Input
+                      id="jumlah_max_airbersih"
+                      type="number"
+                      value={formData.jumlah_max_airbersih || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jumlah_max_airbersih: Number(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
                 </div>
                 <Button type="submit" className="w-full">
-                  Simpan
+                  {editingId ? "Update" : "Simpan"}
                 </Button>
               </form>
+            </DialogContent>
+          </Dialog>
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <div className="flex flex-col items-center justify-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                    <Trash2 className="w-8 h-8 text-red-500" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center">
+                  Konfirmasi Hapus
+                </DialogTitle>
+                <DialogDescription className="text-center">
+                  Apakah kamu yakin menghapus data kebutuhan operasional untuk
+                  bencana{" "}
+                  {
+                    disasters.find((d) => d.id === needToDelete?.id_bencana)
+                      ?.jenis_bencana
+                  }
+                  ?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center gap-2">
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDeleteDialogOpen(false);
+                      setNeedToDelete(null);
+                    }}
+                  >
+                    Batal
+                  </Button>
+                  <Button variant="destructive" onClick={confirmDelete}>
+                    Ya, Hapus
+                  </Button>
+                </DialogFooter>
+              </div>
             </DialogContent>
           </Dialog>
         </main>
